@@ -2,6 +2,7 @@
 import { Restaurant } from '@/lib/db';
 import { updateRestaurant } from '@/lib/actions';
 import { useState } from 'react';
+import ImageUpload from '@/components/ImageUpload';
 
 export default function RestaurantForm({ restaurant }: { restaurant: Restaurant }) {
   const [formData, setFormData] = useState(restaurant);
@@ -38,21 +39,17 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
           />
         </div>
          <div>
-          <label className="block text-sm font-medium text-gray-700">Banner URL</label>
-          <input
-            type="text"
+          <ImageUpload
+            label="Banner do Restaurante"
             value={formData.bannerUrl || ''}
-            onChange={(e) => setFormData({ ...formData, bannerUrl: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+            onChange={(url) => setFormData({ ...formData, bannerUrl: url })}
           />
         </div>
          <div>
-          <label className="block text-sm font-medium text-gray-700">Logo URL</label>
-          <input
-            type="text"
+          <ImageUpload
+            label="Logo do Restaurante"
             value={formData.logoUrl || ''}
-            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+            onChange={(url) => setFormData({ ...formData, logoUrl: url })}
           />
         </div>
         <div>
