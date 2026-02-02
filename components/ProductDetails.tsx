@@ -2,7 +2,7 @@
 
 import { Product } from '@/lib/db';
 import Link from 'next/link';
-import { ArrowLeft, Minus, Plus, Star, User, X, ZoomIn } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, X, ZoomIn } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
@@ -179,56 +179,7 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
               </div>
           </div>
 
-          {/* Fictitious Reviews */}
-          <div className="p-6 bg-white mt-2 mb-12">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Avaliações dos Clientes</h2>
-              <div className="space-y-6">
-                  <div className="border-b pb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                              <User size={16} className="text-gray-500" />
-                          </div>
-                          <span className="font-medium text-gray-800">Ricardo Silva</span>
-                          <div className="flex items-center ml-auto">
-                              {[...Array(5)].map((_, i) => (
-                                  <Star key={i} size={14} fill={i < 5 ? primaryColor : "transparent"} color={primaryColor} />
-                              ))}
-                          </div>
-                      </div>
-                      <p className="text-sm text-gray-600 italic">"Muito bom! Chegou quentinho e o tempero estava perfeito."</p>
-                  </div>
-
-                  <div className="border-b pb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                              <User size={16} className="text-gray-500" />
-                          </div>
-                          <span className="font-medium text-gray-800">Ana Oliveira</span>
-                          <div className="flex items-center ml-auto">
-                              {[...Array(5)].map((_, i) => (
-                                  <Star key={i} size={14} fill={i < 4 ? primaryColor : "transparent"} color={primaryColor} />
-                              ))}
-                          </div>
-                      </div>
-                      <p className="text-sm text-gray-600 italic">"Gostei bastante, só achei que poderia vir um pouco mais de molho. Mas a qualidade é excelente!"</p>
-                  </div>
-
-                  <div className="pb-4">
-                      <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                              <User size={16} className="text-gray-500" />
-                          </div>
-                          <span className="font-medium text-gray-800">Marcos Paulo</span>
-                          <div className="flex items-center ml-auto">
-                              {[...Array(5)].map((_, i) => (
-                                  <Star key={i} size={14} fill={i < 5 ? primaryColor : "transparent"} color={primaryColor} />
-                              ))}
-                          </div>
-                      </div>
-                      <p className="text-sm text-gray-600 italic">"Melhor custo benefício da região. Recomendo com certeza!"</p>
-                  </div>
-              </div>
-          </div>
+          {/* Fictitious Reviews Removed */}
        </div>
 
        {/* Footer Actions */}
