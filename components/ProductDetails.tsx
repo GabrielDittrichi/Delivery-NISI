@@ -63,9 +63,9 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
                   <img 
                     src={product.imageUrl} 
                     alt={product.name} 
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain bg-white"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
+                  <div className="absolute inset-0 transition-all flex items-center justify-center hover:bg-black/10">
                     <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" size={32} />
                   </div>
               </div>
