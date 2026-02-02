@@ -43,6 +43,8 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             label="Banner do Restaurante"
             value={formData.bannerUrl || ''}
             onChange={(url) => setFormData({ ...formData, bannerUrl: url })}
+            enableCrop={true}
+            aspect={3 / 1}
           />
         </div>
          <div>
@@ -50,6 +52,8 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             label="Logo do Restaurante"
             value={formData.logoUrl || ''}
             onChange={(url) => setFormData({ ...formData, logoUrl: url })}
+            enableCrop={true}
+            aspect={1}
           />
         </div>
         <div>
