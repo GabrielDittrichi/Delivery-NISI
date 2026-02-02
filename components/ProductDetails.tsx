@@ -2,7 +2,7 @@
 
 import { Product } from '@/lib/db';
 import Link from 'next/link';
-import { ArrowLeft, Minus, Plus, Star, User } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Star, User, X, ZoomIn } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,7 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
   const [quantity, setQuantity] = useState(1);
   const [selectedFlavor, setSelectedFlavor] = useState<string>('');
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [isImageOpen, setIsImageOpen] = useState(false);
   const { addToCart } = useCart();
   const router = useRouter();
 
@@ -55,13 +56,40 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
 
        <div className="container mx-auto max-w-2xl">
           {product.imageUrl && (
-              <div className="w-full h-64 md:h-80 bg-gray-200 relative">
+              <div 
+                className="w-full h-64 md:h-80 bg-gray-100 relative cursor-pointer group overflow-hidden"
+                onClick={() => setIsImageOpen(true)}
+              >
                   <img 
                     src={product.imageUrl} 
                     alt={product.name} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all flex items-center justify-center">
+                    <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" size={32} />
+                  </div>
               </div>
+          )}
+
+          {/* Lightbox Modal */}
+          {isImageOpen && product.imageUrl && (
+            <div 
+              className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4 animate-in fade-in duration-200"
+              onClick={() => setIsImageOpen(false)}
+            >
+              <button 
+                className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full transition-colors"
+                onClick={() => setIsImageOpen(false)}
+              >
+                <X size={32} />
+              </button>
+              <img 
+                src={product.imageUrl} 
+                alt={product.name} 
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()} 
+              />
+            </div>
           )}
 
           <div className="p-6 bg-white">
