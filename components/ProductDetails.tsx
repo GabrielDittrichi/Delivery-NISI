@@ -57,7 +57,7 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
        <div className="container mx-auto max-w-2xl">
           {product.imageUrl && (
               <div 
-                className="w-full h-64 md:h-80 bg-gray-100 relative cursor-pointer group overflow-hidden"
+                className="w-full h-64 md:h-80 bg-white relative cursor-pointer group overflow-hidden"
                 onClick={() => setIsImageOpen(true)}
               >
                   <img 

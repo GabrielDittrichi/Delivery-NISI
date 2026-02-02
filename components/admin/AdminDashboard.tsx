@@ -6,10 +6,11 @@ import CategoryManager from './CategoryManager';
 import ProductManager from './ProductManager';
 import CouponManager from './CouponManager';
 import DashboardOverview from './DashboardOverview';
-import { LayoutDashboard, ShoppingBag, List, Tag, PieChart } from 'lucide-react';
+import OrdersManager from './OrdersManager';
+import { LayoutDashboard, ShoppingBag, List, Tag, PieChart, Package } from 'lucide-react';
 
-export default function AdminDashboard({ initialData, initialMetrics }: { initialData: DataStore, initialMetrics?: any }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'restaurant' | 'categories' | 'products' | 'coupons'>('overview');
+export default function AdminDashboard({ initialData, initialMetrics, initialOrders }: { initialData: DataStore, initialMetrics?: any, initialOrders?: any[] }) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'restaurant' | 'categories' | 'products' | 'coupons'>('overview');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -21,6 +22,14 @@ export default function AdminDashboard({ initialData, initialMetrics }: { initia
           <PieChart size={20} className="shrink-0" />
           <span className="hidden sm:inline">Visão Geral</span>
           <span className="sm:hidden">Geral</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`w-full flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'orders' ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+        >
+          <Package size={20} className="shrink-0" />
+          <span className="hidden sm:inline">Pedidos</span>
+          <span className="sm:hidden">Pedidos</span>
         </button>
         <button
           onClick={() => setActiveTab('restaurant')}
@@ -58,6 +67,7 @@ export default function AdminDashboard({ initialData, initialMetrics }: { initia
 
       <div className="md:col-span-3">
         {activeTab === 'overview' && <DashboardOverview metrics={initialMetrics} />}
+        {activeTab === 'orders' && <OrdersManager initialOrders={initialOrders || []} />}
         {activeTab === 'restaurant' && <RestaurantForm restaurant={initialData.restaurant} />}
         {activeTab === 'categories' && <CategoryManager categories={initialData.categories} />}
         {activeTab === 'products' && <ProductManager categories={initialData.categories} products={initialData.products} />}

@@ -96,16 +96,34 @@ export async function moveCategory(id: string, direction: 'up' | 'down') {
 }
 
 export async function updateCategory(category: Category) {
-  await prisma.category.update({
+await prisma.category.update({
     where: { id: category.id },
     data: {
       name: category.name,
+      order: category.order,
     },
   });
   revalidatePath('/');
   revalidatePath('/admin');
 }
 
+export async function getOrders() {
+  const orders = await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      items: true
+    }
+  });
+  return orders;
+}
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status }
+  });
+  revalidatePath('/admin');
+}
 export async function deleteCategory(id: string) {
   try {
     // Delete all products in this category first to avoid FK constraint errors
