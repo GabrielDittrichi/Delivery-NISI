@@ -39,6 +39,53 @@ export default function CheckoutPage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState('');
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    setCouponLoading(true);
+    setCouponMessage(null);
+
+    try {
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: couponCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setCouponMessage({ type: 'error', text: data.message });
+        setDiscount(0);
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon(data);
+        
+        // Calculate discount
+        let discountValue = 0;
+        if (data.type === 'PERCENTAGE') {
+            discountValue = (cartTotal * data.value) / 100;
+        } else {
+            discountValue = data.value;
+        }
+        
+        // Ensure discount doesn't exceed total
+        discountValue = Math.min(discountValue, cartTotal);
+        
+        setDiscount(discountValue);
+        setCouponMessage({ type: 'success', text: `Cupom ${data.code} aplicado com sucesso!` });
+      }
+    } catch (error) {
+      setCouponMessage({ type: 'error', text: 'Erro ao validar cupom' });
+      setDiscount(0);
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleCepBlur = async () => {
     const cep = formData.cep.replace(/\D/g, '');
     if (cep.length !== 8) {

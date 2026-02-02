@@ -91,7 +91,7 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
                         />
                         <YAxis fontSize={12} tickFormatter={(val) => `R$${val}`} />
                         <Tooltip 
-                            formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Faturamento']}
+                            formatter={(value: any) => [`R$ ${Number(value).toFixed(2)}`, 'Faturamento']}
                             labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
                         />
                         <Bar dataKey="total" fill="#16a34a" radius={[4, 4, 0, 0]} />

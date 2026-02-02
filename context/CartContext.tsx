@@ -11,9 +11,9 @@ export interface CartItem extends Product {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity: number, selectedFlavor?: string) => void;
-  removeFromCart: (productId: string, selectedFlavor?: string) => void;
-  updateQuantity: (productId: string, quantity: number, selectedFlavor?: string) => void;
+  addToCart: (product: Product, quantity: number, selectedFlavor?: string, selectedAddons?: string[]) => void;
+  removeFromCart: (productId: string, selectedFlavor?: string, selectedAddons?: string[]) => void;
+  updateQuantity: (productId: string, quantity: number, selectedFlavor?: string, selectedAddons?: string[]) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;

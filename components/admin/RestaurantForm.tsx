@@ -41,7 +41,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
           <label className="block text-sm font-medium text-gray-700">Banner URL</label>
           <input
             type="text"
-            value={formData.bannerUrl}
+            value={formData.bannerUrl || ''}
             onChange={(e) => setFormData({ ...formData, bannerUrl: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
           />
@@ -50,7 +50,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
           <label className="block text-sm font-medium text-gray-700">Logo URL</label>
           <input
             type="text"
-            value={formData.logoUrl}
+            value={formData.logoUrl || ''}
             onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
           />
@@ -82,7 +82,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
               <label className="block text-sm font-medium text-gray-700">Tempo Entrega</label>
               <input
                 type="text"
-                value={formData.deliveryTime}
+                value={formData.deliveryTime || ''}
                 onChange={(e) => setFormData({ ...formData, deliveryTime: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
               />
