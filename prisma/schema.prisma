@@ -1,0 +1,138 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id           String @id @default(cuid())
+  name         String
+  description  String
+  rating       Float  @default(0)
+  deliveryTime String?
+  deliveryFee  Float  @default(0)
+  minOrder     Float  @default(0)
+  bannerUrl    String?
+  logoUrl      String?
+  primaryColor String @default("#16a34a")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  price       Float
+  imageUrl    String?
+  proteins    Float    @default(0)
+  calories    Float    @default(0)
+  weight      Float    @default(0) // em gramas
+  volume      Float    @default(0) // em ml
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  flavors     Flavor[]
+  addons      Addon[]
+  allowMultipleAddons Boolean @default(true)
+  orderItems  OrderItem[]
+  views       ProductView[]
+}
+
+model Flavor {
+  id        String  @id @default(cuid())
+  name      String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Addon {
+  id        String  @id @default(cuid())
+  name      String
+  price     Float   @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  type      String   @default("PERCENTAGE") // PERCENTAGE | FIXED
+  value     Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Analytics & Orders
+
+model Order {
+  id             String      @id @default(cuid())
+  customerName   String
+  customerPhone  String
+  
+  // Address
+  cep            String
+  street         String
+  number         String
+  complement     String?
+  neighborhood   String
+  city           String
+  state          String
+  
+  paymentMethod  String
+  observations   String?
+  
+  subtotal       Float
+  deliveryFee    Float
+  discount       Float
+  total          Float
+  
+  status         String      @default("PENDING") // PENDING, CONFIRMED, DELIVERED, CANCELED
+  
+  items          OrderItem[]
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id])
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  productName    String  // Snapshot do nome
+  quantity       Int
+  price          Float   // Preço unitário no momento da compra
+  total          Float
+  selectedFlavor String?
+  selectedAddons String? // JSON stringified list of addons
+}
+
+model Visit {
+  id        String   @id @default(cuid())
+  ip        String?
+  userAgent String?
+  referer   String?
+  platform  String?  // Instagram, Facebook, Google, Direct, etc.
+  city      String?
+  country   String?
+  createdAt DateTime @default(now())
+}
+
+model ProductView {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}

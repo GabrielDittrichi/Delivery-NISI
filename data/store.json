@@ -1,0 +1,153 @@
+{
+  "restaurant": {
+    "name": "Levemente Espaço Fitness Gourmet",
+    "description": "Comida saudável e saborosa para o seu dia a dia.",
+    "rating": 4.8,
+    "deliveryTime": "30-45 min",
+    "deliveryFee": 5.00,
+    "minOrder": 20.00,
+    "bannerUrl": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1000&auto=format&fit=crop",
+    "logoUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=200&auto=format&fit=crop",
+    "primaryColor": "#16a34a"
+  },
+  "categories": [
+    { "id": "1", "name": "Destaques" },
+    { "id": "2", "name": "Pratos Fit" },
+    { "id": "3", "name": "Sucos Naturais" },
+    { "id": "4", "name": "Sobremesas Low Carb" },
+    { "id": "5", "name": "Saladas" },
+    { "id": "6", "name": "Wraps" },
+    { "id": "7", "name": "Bebidas Quentes" },
+    { "id": "8", "name": "Shakes" }
+  ],
+  "products": [
+    {
+      "id": "101",
+      "categoryId": "1",
+      "name": "Combo Fit Frango",
+      "description": "Frango grelhado, batata doce rústica e mix de folhas.",
+      "price": 28.90,
+      "imageUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "102",
+      "categoryId": "1",
+      "name": "Açaí Zero",
+      "description": "Açaí puro sem xarope, com granola sem açúcar.",
+      "price": 22.00,
+      "imageUrl": "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "201",
+      "categoryId": "2",
+      "name": "Escondidinho de Batata Doce",
+      "description": "Escondidinho de batata doce com patinho moído.",
+      "price": 25.50,
+      "imageUrl": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "202",
+      "categoryId": "2",
+      "name": "Panqueca Integral de Carne",
+      "description": "Massa integral recheada com carne moída magra e molho de tomate caseiro.",
+      "price": 24.90,
+      "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "301",
+      "categoryId": "3",
+      "name": "Suco Detox",
+      "description": "Couve, limão, gengibre e maçã.",
+      "price": 12.00,
+      "imageUrl": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "302",
+      "categoryId": "3",
+      "name": "Suco de Laranja com Acerola",
+      "description": "Vitamina C pura para sua imunidade.",
+      "price": 10.00,
+      "imageUrl": "https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "401",
+      "categoryId": "4",
+      "name": "Mousse de Cacau",
+      "description": "Feito com abacate e cacau 100%, adoçado com xilitol.",
+      "price": 15.00,
+      "imageUrl": "https://images.unsplash.com/photo-1511381939415-e44015466834?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "501",
+      "categoryId": "5",
+      "name": "Salada Caesar Fit",
+      "description": "Alface americana, frango em tiras, croutons integrais e molho de iogurte.",
+      "price": 26.90,
+      "imageUrl": "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "502",
+      "categoryId": "5",
+      "name": "Mix de Folhas com Manga",
+      "description": "Rúcula, alface, manga, tomate cereja e castanhas.",
+      "price": 23.50,
+      "imageUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "601",
+      "categoryId": "6",
+      "name": "Wrap de Frango com Ricota",
+      "description": "Pão folha integral, frango desfiado, ricota temperada e cenoura ralada.",
+      "price": 21.90,
+      "imageUrl": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "602",
+      "categoryId": "6",
+      "name": "Wrap Vegetariano",
+      "description": "Pasta de grão de bico, abobrinha grelhada e pimentões.",
+      "price": 20.90,
+      "imageUrl": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "701",
+      "categoryId": "7",
+      "name": "Café Expresso",
+      "description": "Café especial moído na hora.",
+      "price": 6.00,
+      "imageUrl": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+      "id": "702",
+      "categoryId": "7",
+      "name": "Chá Verde com Gengibre",
+      "description": "Infusão natural para acelerar o metabolismo.",
+      "price": 7.50,
+      "imageUrl": "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?q=80&w=500&auto=format&fit=crop"
+    },
+    {
+       "id": "801",
+       "categoryId": "8",
+       "name": "Shake",
+       "description": "Delicioso shake com diversos sabores.",
+       "price": 18.00,
+       "imageUrl": "",
+       "flavors": [
+         "Pé de Moleque",
+         "Pinacolada",
+         "Chica Bom",
+         "Prestigio",
+         "Capuccino",
+         "Flocos",
+         "Quick",
+         "Napolitano",
+         "Chokito",
+         "Frape abacaxi",
+         "Frapê banana",
+         "Mocaccino",
+         "Oreo",
+         "Frape coco"
+       ]
+    }
+  ]
+}
