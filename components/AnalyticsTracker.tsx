@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { trackVisit } from '@/lib/analytics';
+import { trackMarketingEvent } from '@/lib/tracking';
 
 export default function AnalyticsTracker() {
   useEffect(() => {
@@ -9,24 +10,32 @@ export default function AnalyticsTracker() {
     // if (process.env.NODE_ENV === 'development') return;
 
     const track = async () => {
-      // Tentar obter dados básicos de localização via API pública gratuita (opcional)
-      // Se falhar, segue sem localização
-      let locationData = { city: undefined, country: undefined };
+      trackMarketingEvent('PageView', {
+        page_path: window.location.pathname,
+      });
+
+      // Prefer server-side tracking (no external client dependency).
       try {
-        const res = await fetch('https://ipapi.co/json/');
-        if (res.ok) {
-            const data = await res.json();
-            locationData = { city: data.city, country: data.country_name };
+        const payload = JSON.stringify({ referer: document.referrer });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+        } else {
+          await fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          });
         }
-      } catch (e) {
-        // Ignorar erro de fetch de localização
+        return;
+      } catch {
+        // fall through
       }
 
+      // Fallback: server action (still works, but depends on client execution).
       await trackVisit({
         userAgent: navigator.userAgent,
         referer: document.referrer,
-        city: locationData.city,
-        country: locationData.country
       });
     };
 

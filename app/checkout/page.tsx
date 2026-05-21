@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Store, Bike } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Store, Bike, User, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { trackMarketingEvent } from '@/lib/tracking';
 
 type PaymentMethod = 'PIX' | 'MONEY' | 'CREDIT' | 'DEBIT';
 type DeliveryMethod = 'DELIVERY' | 'PICKUP';
@@ -42,6 +43,35 @@ export default function CheckoutPage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState('');
 
+  useEffect(() => {
+    if (items.length === 0) return;
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'checkout_started',
+        metadata: {
+          items: items.length,
+          total: cartTotal,
+        },
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [cartTotal, items.length]);
+
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
 
@@ -54,7 +84,7 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code: couponCode }),
+        body: JSON.stringify({ code: couponCode, total: cartTotal }),
       });
 
       const data = await response.json();
@@ -79,8 +109,13 @@ export default function CheckoutPage() {
         
         setDiscount(discountValue);
         setCouponMessage({ type: 'success', text: `Cupom ${data.code} aplicado com sucesso!` });
+        trackMarketingEvent('ApplyCoupon', {
+          coupon: data.code,
+          discount: discountValue,
+          currency: 'BRL',
+        });
       }
-    } catch (error) {
+    } catch {
       setCouponMessage({ type: 'error', text: 'Erro ao validar cupom' });
       setDiscount(0);
       setAppliedCoupon(null);
@@ -111,7 +146,7 @@ export default function CheckoutPage() {
                 state: data.uf
             }));
         }
-    } catch (error) {
+    } catch {
         setCepError('Erro ao buscar CEP');
     } finally {
         setCepLoading(false);
@@ -120,6 +155,14 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === 'cep') {
+      setFormData(prev => ({ ...prev, cep: formatCep(value) }));
+      return;
+    }
+    if (name === 'phone') {
+      setFormData(prev => ({ ...prev, phone: formatPhone(value) }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -129,8 +172,23 @@ export default function CheckoutPage() {
         alert('Seu carrinho está vazio');
         return;
     }
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    const cepDigits = formData.cep.replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+        alert('Informe um telefone valido para o atendimento.');
+        return;
+    }
+    if (deliveryMethod === 'DELIVERY' && (cepDigits.length !== 8 || !!cepError)) {
+        alert('Informe um CEP valido para entrega.');
+        return;
+    }
 
     setIsSubmitting(true);
+    trackMarketingEvent('InitiateCheckout', {
+      currency: 'BRL',
+      value: Math.max(0, cartTotal - discount),
+      num_items: items.reduce((count, item) => count + item.quantity, 0),
+    });
     
     // Preparar dados do pedido
     const orderData = {
@@ -140,6 +198,7 @@ export default function CheckoutPage() {
         deliveryFee: 0, // Taxa calculada no atendimento
         discount: discount,
         total: Math.max(0, cartTotal - discount),
+        couponCode: appliedCoupon?.code,
         items: items
     };
 
@@ -147,6 +206,19 @@ export default function CheckoutPage() {
     const result = await createOrder(orderData);
     
     if (result && result.success) {
+        trackMarketingEvent('Purchase', {
+          transaction_id: result.orderId,
+          currency: 'BRL',
+          value: orderData.total,
+          coupon: appliedCoupon?.code,
+          items: items.map((item) => ({
+            item_id: item.id,
+            item_name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        });
+
         // Gerar mensagem para WhatsApp
         const addressText = deliveryMethod === 'DELIVERY' 
             ? `*Endereço de Entrega:*\n${formData.street}, ${formData.number}\n${formData.neighborhood}, ${formData.city} - ${formData.state}\n${formData.complement ? `Comp: ${formData.complement}` : ''}`
@@ -162,24 +234,46 @@ export default function CheckoutPage() {
 ${addressText}
 
 *Itens:*
-${items.map(item => `
+${items.map(item => {
+  const flavorName = item.selectedFlavor
+    ? (item.flavors?.find(f => f.id === item.selectedFlavor)?.name || item.selectedFlavor)
+    : '';
+  const addonsText =
+    item.selectedAddons && item.selectedAddons.length > 0
+      ? item.selectedAddons
+          .map(id => {
+            const addon = item.addons?.find(a => a.id === id);
+            if (!addon) return id;
+            return addon.price > 0
+              ? `${addon.name} (+R$ ${addon.price.toFixed(2).replace('.', ',')})`
+              : addon.name;
+          })
+          .join(', ')
+      : '';
+  const addonsTotal =
+    item.selectedAddons?.reduce((acc, id) => acc + (item.addons?.find(a => a.id === id)?.price || 0), 0) || 0;
+  const lineTotal = (item.price + addonsTotal) * item.quantity;
+
+  return `
 ${item.quantity}x ${item.name}
-${item.selectedFlavor ? `Sabor: ${item.selectedFlavor}` : ''}
-${item.selectedAddons && item.selectedAddons.length > 0 ? `Adicionais: ${item.selectedAddons.join(', ')}` : ''}
-R$ ${(item.price * item.quantity).toFixed(2)}
-`).join('')}
+${flavorName ? `Sabor: ${flavorName}` : ''}
+${addonsText ? `Adicionais: ${addonsText}` : ''}
+R$ ${lineTotal.toFixed(2).replace('.', ',')}
+`.trim();
+}).join('\n\n')}
 
 *Resumo:*
-Subtotal: R$ ${cartTotal.toFixed(2)}
+Subtotal: R$ ${cartTotal.toFixed(2).replace('.', ',')}
 ${deliveryMethod === 'DELIVERY' ? 'Entrega: A combinar' : ''}
-${discount > 0 ? `Desconto: -R$ ${discount.toFixed(2)}\n` : ''}
-*Total: R$ ${orderData.total.toFixed(2)}* ${deliveryMethod === 'DELIVERY' ? '(+ frete)' : ''}
+${discount > 0 ? `Desconto: -R$ ${discount.toFixed(2).replace('.', ',')}\n` : ''}
+*Total: R$ ${orderData.total.toFixed(2).replace('.', ',')}* ${deliveryMethod === 'DELIVERY' ? '(+ frete)' : ''}
 
 *Pagamento:* ${formData.paymentMethod}
 ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
         `.trim();
 
-        const whatsappUrl = `https://wa.me/5599999999999?text=${encodeURIComponent(message)}`;
+        const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5599999999999';
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
         
         clearCart();
         window.open(whatsappUrl, '_blank');
@@ -194,7 +288,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
       return (
           <div className="min-h-screen flex flex-col items-center justify-center p-4">
               <p className="text-gray-600 mb-4">Seu carrinho está vazio.</p>
-              <Link href="/" className="text-green-600 font-medium hover:underline">
+              <Link href="/" className="font-medium hover:underline" style={{ color: 'var(--brand)' }}>
                   Voltar para o cardápio
               </Link>
           </div>
@@ -202,17 +296,39 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-[#f8fbf8] pb-24">
       <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
          <div className="container mx-auto max-w-2xl flex items-center">
              <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
-                 <ArrowLeft size={24} className="text-green-600" />
+                 <ArrowLeft size={24} style={{ color: 'var(--brand)' }} />
              </Link>
-             <h1 className="ml-2 font-medium text-lg text-gray-800">Finalizar Pedido</h1>
+             <h1 className="ml-2 font-medium text-lg text-gray-800">Finalizar no NISI</h1>
          </div>
       </div>
 
       <div className="container mx-auto max-w-2xl p-4 space-y-6">
+        <div className="rounded-lg border bg-white p-4 shadow-sm" style={{ borderColor: 'var(--border)' }}>
+          <p className="text-sm font-semibold text-gray-950">Vamos preparar seu pedido no NISI</p>
+          <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px] font-medium text-gray-600">
+            {[
+              { label: 'Dados', icon: User },
+              { label: 'Entrega', icon: deliveryMethod === 'DELIVERY' ? Bike : Store },
+              { label: 'Pagamento', icon: CreditCard },
+              { label: 'Resumo', icon: ClipboardCheck },
+            ].map((step) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.label} className="flex flex-col items-center gap-1">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
+                    <Icon size={15} />
+                  </span>
+                  {step.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
             
             {/* Personal Data */}
@@ -225,24 +341,24 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                     Dados Pessoais
                 </h2>
                 <div className="space-y-3">
-                    <input 
-                        type="text" 
-                        name="name"
-                        placeholder="Nome Completo"
-                        required
-                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                    />
-                    <input 
-                        type="tel" 
-                        name="phone"
-                        placeholder="Telefone / WhatsApp"
-                        required
-                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                    />
+	                    <input 
+	                        type="text" 
+	                        name="name"
+	                        placeholder="Nome Completo"
+	                        required
+	                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                        value={formData.name}
+	                        onChange={handleInputChange}
+	                    />
+	                    <input 
+	                        type="tel" 
+	                        name="phone"
+	                        placeholder="Telefone / WhatsApp"
+	                        required
+	                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                        value={formData.phone}
+	                        onChange={handleInputChange}
+	                    />
                 </div>
             </motion.div>
 
@@ -257,25 +373,27 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                     Tipo de Entrega
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setDeliveryMethod('DELIVERY')}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            deliveryMethod === 'DELIVERY' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setDeliveryMethod('DELIVERY')}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            deliveryMethod === 'DELIVERY' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={deliveryMethod === 'DELIVERY' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <Bike size={24} />
                         <span className="text-sm font-medium">Entrega</span>
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setDeliveryMethod('PICKUP')}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            deliveryMethod === 'PICKUP' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setDeliveryMethod('PICKUP')}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            deliveryMethod === 'PICKUP' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={deliveryMethod === 'PICKUP' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <Store size={24} />
                         <span className="text-sm font-medium">Retirada</span>
                     </button>
@@ -298,74 +416,74 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                         </h2>
                         <div className="space-y-3">
                             <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    name="cep"
-                                    placeholder="CEP"
-                                    required={deliveryMethod === 'DELIVERY'}
-                                    className={clsx("w-32 border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500", cepError && "border-red-500")}
-                                    value={formData.cep}
-                                    onChange={handleInputChange}
-                                    onBlur={handleCepBlur}
-                                    maxLength={9}
-                                />
+	                                <input 
+	                                    type="text" 
+	                                    name="cep"
+	                                    placeholder="CEP"
+	                                    required={deliveryMethod === 'DELIVERY'}
+	                                    className={clsx("w-32 border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]", cepError && "border-emerald-600")}
+	                                    value={formData.cep}
+	                                    onChange={handleInputChange}
+	                                    onBlur={handleCepBlur}
+	                                    maxLength={9}
+	                                />
                                 {cepLoading && <span className="text-sm text-gray-500 self-center">Buscando...</span>}
                             </div>
-                            {cepError && <p className="text-sm text-red-500">{cepError}</p>}
+                            {cepError && <p className="text-sm text-emerald-700">{cepError}</p>}
                             
                             <div className="grid grid-cols-[1fr_100px] gap-2">
-                                <input 
-                                    type="text" 
-                                    name="street"
-                                    placeholder="Rua"
-                                    required={deliveryMethod === 'DELIVERY'}
-                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500 bg-gray-50"
-                                    value={formData.street}
-                                    onChange={handleInputChange}
-                                    readOnly
-                                />
-                                <input 
-                                    type="text" 
-                                    name="number"
-                                    placeholder="Número"
-                                    required={deliveryMethod === 'DELIVERY'}
-                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500"
-                                    value={formData.number}
-                                    onChange={handleInputChange}
-                                />
+	                                <input 
+	                                    type="text" 
+	                                    name="street"
+	                                    placeholder="Rua"
+	                                    required={deliveryMethod === 'DELIVERY'}
+	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    value={formData.street}
+	                                    onChange={handleInputChange}
+	                                    readOnly
+	                                />
+	                                <input 
+	                                    type="text" 
+	                                    name="number"
+	                                    placeholder="Número"
+	                                    required={deliveryMethod === 'DELIVERY'}
+	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                                    value={formData.number}
+	                                    onChange={handleInputChange}
+	                                />
                             </div>
 
-                            <input 
-                                type="text" 
-                                name="complement"
-                                placeholder="Complemento (Opcional)"
-                                className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500"
-                                value={formData.complement}
-                                onChange={handleInputChange}
-                            />
+	                            <input 
+	                                type="text" 
+	                                name="complement"
+	                                placeholder="Complemento (Opcional)"
+	                                className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                                value={formData.complement}
+	                                onChange={handleInputChange}
+	                            />
 
-                            <div className="grid grid-cols-2 gap-2">
-                                <input 
-                                    type="text" 
-                                    name="neighborhood"
-                                    placeholder="Bairro"
-                                    required={deliveryMethod === 'DELIVERY'}
-                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500 bg-gray-50"
-                                    value={formData.neighborhood}
-                                    onChange={handleInputChange}
-                                    readOnly
-                                />
-                                <input 
-                                    type="text" 
-                                    name="city"
-                                    placeholder="Cidade"
-                                    required={deliveryMethod === 'DELIVERY'}
-                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500 bg-gray-50"
-                                    value={formData.city}
-                                    onChange={handleInputChange}
-                                    readOnly
-                                />
-                            </div>
+	                            <div className="grid grid-cols-2 gap-2">
+	                                <input 
+	                                    type="text" 
+	                                    name="neighborhood"
+	                                    placeholder="Bairro"
+	                                    required={deliveryMethod === 'DELIVERY'}
+	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    value={formData.neighborhood}
+	                                    onChange={handleInputChange}
+	                                    readOnly
+	                                />
+	                                <input 
+	                                    type="text" 
+	                                    name="city"
+	                                    placeholder="Cidade"
+	                                    required={deliveryMethod === 'DELIVERY'}
+	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    value={formData.city}
+	                                    onChange={handleInputChange}
+	                                    readOnly
+	                                />
+	                            </div>
                         </div>
                     </motion.div>
                 ) : (
@@ -397,47 +515,51 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
             >
                 <h2 className="font-semibold text-gray-900">Forma de Pagamento</h2>
                 <div className="grid grid-cols-2 gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'PIX' }))}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            formData.paymentMethod === 'PIX' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'PIX' }))}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            formData.paymentMethod === 'PIX' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={formData.paymentMethod === 'PIX' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <QrCode size={24} />
                         <span className="text-sm font-medium">PIX</span>
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'MONEY' }))}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            formData.paymentMethod === 'MONEY' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'MONEY' }))}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            formData.paymentMethod === 'MONEY' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={formData.paymentMethod === 'MONEY' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <Banknote size={24} />
                         <span className="text-sm font-medium">Dinheiro</span>
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CREDIT' }))}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            formData.paymentMethod === 'CREDIT' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CREDIT' }))}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            formData.paymentMethod === 'CREDIT' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={formData.paymentMethod === 'CREDIT' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <CreditCard size={24} />
                         <span className="text-sm font-medium">Crédito</span>
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'DEBIT' }))}
-                        className={clsx(
-                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-                            formData.paymentMethod === 'DEBIT' ? "border-green-500 bg-green-50 text-green-700" : "hover:bg-gray-50"
-                        )}
-                    >
+	                    <button
+	                        type="button"
+	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'DEBIT' }))}
+	                        className={clsx(
+	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            formData.paymentMethod === 'DEBIT' ? "hover:bg-gray-50" : "hover:bg-gray-50"
+	                        )}
+	                        style={formData.paymentMethod === 'DEBIT' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
+	                    >
                         <CreditCard size={24} />
                         <span className="text-sm font-medium">Débito</span>
                     </button>
@@ -451,65 +573,14 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 transition={{ delay: 0.3 }}
                 className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
             >
-                 <h2 className="font-semibold text-gray-900">Observações do Pedido</h2>
-                 <textarea 
-                    name="observations"
-                    className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none resize-none h-24"
-                    placeholder="Ex: Campainha não funciona, deixar na portaria, tirar cebola do lanche X..."
-                    value={formData.observations}
-                    onChange={handleInputChange}
-                 ></textarea>
-            </motion.div>
-
-            {/* Coupon */}
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
-            >
-                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Banknote size={20} className="text-gray-500" />
-                    Cupom de Desconto
-                </h2>
-                <div className="flex gap-2">
-                    <input 
-                        type="text" 
-                        placeholder="Código do cupom"
-                        className="flex-1 border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500 uppercase"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        disabled={!!appliedCoupon}
-                    />
-                    {appliedCoupon ? (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setAppliedCoupon(null);
-                                setDiscount(0);
-                                setCouponCode('');
-                                setCouponMessage(null);
-                            }}
-                            className="bg-red-100 text-red-700 font-medium px-4 rounded-lg hover:bg-red-200 transition-colors"
-                        >
-                            Remover
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleApplyCoupon}
-                            disabled={couponLoading || !couponCode}
-                            className="bg-gray-900 text-white font-medium px-6 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-                        >
-                            {couponLoading ? '...' : 'Aplicar'}
-                        </button>
-                    )}
-                </div>
-                {couponMessage && (
-                    <p className={clsx("text-sm", couponMessage.type === 'success' ? "text-green-600" : "text-red-500")}>
-                        {couponMessage.text}
-                    </p>
-                )}
+	                 <h2 className="font-semibold text-gray-900">Observações do pedido</h2>
+	                 <textarea 
+	                    name="observations"
+	                    className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[var(--brand)] focus:outline-none resize-none h-24"
+	                    placeholder="Ex: menos gelo, retirar algum ingrediente, ponto de referencia..."
+	                    value={formData.observations}
+	                    onChange={handleInputChange}
+	                 ></textarea>
             </motion.div>
 
             {/* Summary */}
@@ -517,39 +588,91 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-2"
+                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
             >
-                <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
-                </div>
+                <h2 className="font-semibold text-gray-900 pb-2">Resumo do pedido</h2>
+                <div className="space-y-2">
+	                <div className="flex justify-between text-gray-600">
+	                    <span>Subtotal</span>
+	                    <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
+	                </div>
                 {deliveryMethod === 'DELIVERY' && (
                     <div className="flex justify-between text-gray-600 items-center">
                         <span>Taxa de Entrega</span>
                         <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Calculado no atendimento</span>
                     </div>
                 )}
-                {discount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                        <span>Desconto</span>
-                        <span>- R$ {discount.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                )}
-                <div className="flex justify-between font-bold text-lg text-gray-900 pt-2 border-t">
-                    <span>Total</span>
-                    <span>R$ {Math.max(0, cartTotal - discount).toFixed(2).replace('.', ',')}</span>
+	                {discount > 0 && (
+	                    <div className="flex justify-between" style={{ color: 'var(--brand)' }}>
+	                        <span>Desconto</span>
+	                        <span>- R$ {discount.toFixed(2).replace('.', ',')}</span>
+		                    </div>
+		                )}
+	                <div className="flex justify-between font-bold text-lg text-gray-900 pt-2 border-t">
+	                    <span>Total</span>
+	                    <span>R$ {Math.max(0, cartTotal - discount).toFixed(2).replace('.', ',')}</span>
+	                </div>
+                </div>
+
+                <div className="rounded-lg border bg-emerald-50/50 p-3" style={{ borderColor: 'var(--border)' }}>
+                  <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <Banknote size={16} className="text-emerald-700" />
+                    Cupom NISI
+                  </h3>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Código"
+                      className="min-w-0 flex-1 rounded-lg border bg-white p-3 uppercase outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={!!appliedCoupon}
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAppliedCoupon(null);
+                          setDiscount(0);
+                          setCouponCode('');
+                          setCouponMessage(null);
+                        }}
+                        className="rounded-lg bg-gray-100 px-4 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                      >
+                        Remover
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode}
+                        className="rounded-lg bg-gray-900 px-5 font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {couponLoading ? '...' : 'Aplicar'}
+                      </button>
+                    )}
+                  </div>
+                  {couponMessage && (
+                    <p
+                      className={clsx("mt-2 text-sm", couponMessage.type === 'success' ? "" : "text-emerald-700")}
+                      style={couponMessage.type === 'success' ? { color: 'var(--brand)' } : undefined}
+                    >
+                      {couponMessage.text}
+                    </p>
+                  )}
                 </div>
             </motion.div>
 
-            <motion.button 
+	            <motion.button 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-green-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-green-700 active:transform active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {isSubmitting ? 'Processando...' : 'Confirmar Pedido'}
+	                type="submit"
+	                disabled={isSubmitting}
+	                className="w-full text-white font-bold py-4 rounded-lg shadow-lg active:transform active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+	                style={{ backgroundColor: 'var(--brand)' }}
+	            >
+	                {isSubmitting ? 'Processando...' : 'Enviar pedido'}
             </motion.button>
         </form>
       </div>

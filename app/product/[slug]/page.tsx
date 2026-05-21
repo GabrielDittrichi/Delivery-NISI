@@ -2,7 +2,7 @@ import { getProductBySlug, getData } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ProductDetails from '@/components/ProductDetails';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

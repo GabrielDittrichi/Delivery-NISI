@@ -8,6 +8,10 @@ interface Coupon {
   type: string;
   value: number;
   isActive: boolean;
+  expiresAt?: string | null;
+  usageLimit?: number | null;
+  usedCount?: number;
+  minOrder?: number;
 }
 
 export default function CouponManager() {
@@ -17,6 +21,9 @@ export default function CouponManager() {
     code: '',
     type: 'PERCENTAGE',
     value: '',
+    minOrder: '',
+    usageLimit: '',
+    expiresAt: '',
   });
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState('');
@@ -26,7 +33,7 @@ export default function CouponManager() {
     try {
       const res = await fetch('/api/coupons');
       const data = await res.json();
-      setCoupons(data);
+      setCoupons(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching coupons:', error);
     } finally {
@@ -58,11 +65,11 @@ export default function CouponManager() {
         setMessage(data.message || 'Erro ao criar cupom');
       } else {
         setCoupons([data, ...coupons]);
-        setNewCoupon({ code: '', type: 'PERCENTAGE', value: '' });
+        setNewCoupon({ code: '', type: 'PERCENTAGE', value: '', minOrder: '', usageLimit: '', expiresAt: '' });
         setMessage('Cupom criado com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       }
-    } catch (error) {
+    } catch {
       setMessage('Erro ao criar cupom');
     } finally {
       setCreating(false);
@@ -140,6 +147,31 @@ export default function CouponManager() {
                 min="0"
                 step="0.01"
             />
+            <input
+                type="number"
+                placeholder="Pedido mínimo (opcional)"
+                value={newCoupon.minOrder}
+                onChange={(e) => setNewCoupon({ ...newCoupon, minOrder: e.target.value })}
+                className="border rounded-md p-2"
+                min="0"
+                step="0.01"
+            />
+            <input
+                type="number"
+                placeholder="Limite de usos (opcional)"
+                value={newCoupon.usageLimit}
+                onChange={(e) => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })}
+                className="border rounded-md p-2"
+                min="0"
+                step="1"
+            />
+            <input
+                type="date"
+                value={newCoupon.expiresAt}
+                onChange={(e) => setNewCoupon({ ...newCoupon, expiresAt: e.target.value })}
+                className="border rounded-md p-2"
+                aria-label="Validade do cupom"
+            />
         </div>
         
         <div className="flex justify-between items-center">
@@ -164,6 +196,7 @@ export default function CouponManager() {
                         <th className="p-3 font-medium text-gray-600">Código</th>
                         <th className="p-3 font-medium text-gray-600">Tipo</th>
                         <th className="p-3 font-medium text-gray-600">Valor</th>
+                        <th className="p-3 font-medium text-gray-600">Regras</th>
                         <th className="p-3 font-medium text-gray-600">Status</th>
                         <th className="p-3 font-medium text-gray-600 text-right">Ações</th>
                     </tr>
@@ -178,13 +211,18 @@ export default function CouponManager() {
                             <td className="p-3 text-gray-600">
                                 {coupon.type === 'PERCENTAGE' ? `${coupon.value}%` : `R$ ${coupon.value.toFixed(2)}`}
                             </td>
+                            <td className="p-3 text-xs text-gray-600">
+                                <div>Min: R$ {(coupon.minOrder || 0).toFixed(2).replace('.', ',')}</div>
+                                <div>Usos: {coupon.usedCount || 0}{coupon.usageLimit ? `/${coupon.usageLimit}` : ''}</div>
+                                {coupon.expiresAt && <div>Val: {new Date(coupon.expiresAt).toLocaleDateString('pt-BR')}</div>}
+                            </td>
                             <td className="p-3">
                                 <button
                                     onClick={() => handleToggleActive(coupon.id, coupon.isActive)}
                                     className={`px-2 py-1 rounded text-xs font-medium ${
                                         coupon.isActive 
                                         ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                                 >
                                     {coupon.isActive ? 'Ativo' : 'Inativo'}
@@ -193,7 +231,7 @@ export default function CouponManager() {
                             <td className="p-3 text-right">
                                 <button
                                     onClick={() => handleDelete(coupon.id)}
-                                    className="text-red-500 hover:text-red-700 p-2"
+                                    className="text-emerald-700 hover:text-emerald-900 p-2"
                                     title="Excluir"
                                 >
                                     <Trash2 size={18} />
@@ -203,7 +241,7 @@ export default function CouponManager() {
                     ))}
                     {coupons.length === 0 && (
                         <tr>
-                            <td colSpan={5} className="p-8 text-center text-gray-500">
+                            <td colSpan={6} className="p-8 text-center text-gray-500">
                                 Nenhum cupom encontrado.
                             </td>
                         </tr>

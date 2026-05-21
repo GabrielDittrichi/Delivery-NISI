@@ -25,6 +25,7 @@ interface Order {
   createdAt: Date;
   items: OrderItem[];
   paymentMethod: string;
+  deliveryMethod?: string;
   street: string;
   number: string;
   neighborhood: string;
@@ -33,7 +34,9 @@ interface Order {
   observations?: string | null;
 }
 
-export default function OrdersManager({ initialOrders }: { initialOrders: any[] }) {
+export type { Order };
+
+export default function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
@@ -67,9 +70,9 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'CONFIRMED': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'DELIVERED': return 'bg-green-100 text-green-800 border-green-200';
-      case 'CANCELED': return 'bg-red-100 text-red-800 border-red-200';
+      case 'CANCELED': return 'bg-gray-100 text-gray-700 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -98,11 +101,15 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
     });
   };
 
+  const getDeliveryMethodLabel = (deliveryMethod?: string) => {
+    return deliveryMethod === 'PICKUP' ? 'Retirada' : 'Entrega';
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <Package className="text-red-600" />
+          <Package className="text-emerald-700" />
           Gerenciar Pedidos
         </h2>
 
@@ -112,7 +119,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
             <input
               type="text"
               placeholder="Buscar por nome, telefone ou ID..."
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-600 outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -150,13 +157,13 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
                   <div className="flex items-center gap-4">
                     <div className={clsx("p-2 rounded-full", order.status === 'PENDING' ? "bg-yellow-50" : "bg-gray-50")}>
                       {order.status === 'PENDING' && <Clock className="text-yellow-600" size={24} />}
-                      {order.status === 'CONFIRMED' && <CheckCircle className="text-blue-600" size={24} />}
+                      {order.status === 'CONFIRMED' && <CheckCircle className="text-emerald-700" size={24} />}
                       {order.status === 'DELIVERED' && <Truck className="text-green-600" size={24} />}
-                      {order.status === 'CANCELED' && <XCircle className="text-red-600" size={24} />}
+                      {order.status === 'CANCELED' && <XCircle className="text-emerald-700" size={24} />}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">#{order.id.slice(-6)} - {order.customerName}</h3>
-                      <p className="text-sm text-gray-500">{formatDate(order.createdAt)} • {formatCurrency(order.total)}</p>
+                      <p className="text-sm text-gray-500">{formatDate(order.createdAt)} • {getDeliveryMethodLabel(order.deliveryMethod)} • {formatCurrency(order.total)}</p>
                     </div>
                   </div>
                   
@@ -197,17 +204,24 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
 
                       <div className="space-y-6">
                         <div>
-                          <h4 className="font-semibold text-gray-700 mb-2">Detalhes da Entrega</h4>
+                          <h4 className="font-semibold text-gray-700 mb-2">Detalhes do Atendimento</h4>
                           <div className="bg-white p-3 rounded border text-sm space-y-1">
                             <p><span className="font-medium">Cliente:</span> {order.customerName}</p>
                             <p><span className="font-medium">Telefone:</span> {order.customerPhone}</p>
-                            <p><span className="font-medium">Endereço:</span> {order.street}, {order.number}</p>
-                            <p>{order.neighborhood}, {order.city}</p>
-                            {order.complement && <p><span className="font-medium">Complemento:</span> {order.complement}</p>}
+                            <p><span className="font-medium">Tipo:</span> {getDeliveryMethodLabel(order.deliveryMethod)}</p>
+                            {order.deliveryMethod === 'PICKUP' ? (
+                              <p><span className="font-medium">Retirada:</span> Espaco Vida Saudavel NISI</p>
+                            ) : (
+                              <>
+                                <p><span className="font-medium">Endereço:</span> {order.street}, {order.number}</p>
+                                <p>{order.neighborhood}, {order.city}</p>
+                                {order.complement && <p><span className="font-medium">Complemento:</span> {order.complement}</p>}
+                              </>
+                            )}
                             <p><span className="font-medium">Pagamento:</span> {order.paymentMethod === 'MONEY' ? 'Dinheiro' : order.paymentMethod === 'CREDIT' ? 'Cartão de Crédito' : order.paymentMethod === 'DEBIT' ? 'Cartão de Débito' : 'PIX'}</p>
                             {order.observations && (
                               <div className="mt-2 pt-2 border-t">
-                                <span className="font-medium text-red-600">Observações:</span>
+                                <span className="font-medium text-emerald-700">Observações:</span>
                                 <p className="text-gray-600">{order.observations}</p>
                               </div>
                             )}
@@ -222,14 +236,14 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'CONFIRMED'); }}
                                   disabled={updating === order.id}
-                                  className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+                                  className="bg-emerald-700 text-white py-2 px-4 rounded hover:bg-emerald-800 disabled:opacity-50"
                                 >
                                   Confirmar Pedido
                                 </button>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'CANCELED'); }}
                                   disabled={updating === order.id}
-                                  className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 disabled:opacity-50"
+                                  className="bg-emerald-800 text-white py-2 px-4 rounded hover:bg-emerald-900 disabled:opacity-50"
                                 >
                                   Cancelar
                                 </button>
@@ -248,7 +262,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: any[] 
                                <p className="col-span-2 text-center text-green-600 font-medium py-2">Pedido Finalizado</p>
                             )}
                             {order.status === 'CANCELED' && (
-                               <p className="col-span-2 text-center text-red-600 font-medium py-2">Pedido Cancelado</p>
+                               <p className="col-span-2 text-center text-emerald-700 font-medium py-2">Pedido Cancelado</p>
                             )}
                           </div>
                         </div>

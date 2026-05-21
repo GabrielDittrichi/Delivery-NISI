@@ -4,6 +4,7 @@ import { addProduct, deleteProduct, updateProduct } from '@/lib/actions';
 import { useState } from 'react';
 import { Trash2, Plus, Edit2, X } from 'lucide-react';
 import ImageUpload from './ImageUpload';
+import Image from 'next/image';
 
 export default function ProductManager({ categories, products }: { categories: Category[], products: Product[] }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -24,7 +25,10 @@ export default function ProductManager({ categories, products }: { categories: C
     flavors: [] as string[],
     hasAddons: false,
     allowMultipleAddons: true,
-    addons: [] as { name: string, price: number }[]
+    addons: [] as { name: string, price: number }[],
+    isActive: true,
+    isFeatured: false,
+    sortOrder: 0
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -56,7 +60,10 @@ export default function ProductManager({ categories, products }: { categories: C
         flavors: product.flavors ? product.flavors.map(f => f.name) : [],
         hasAddons: !!(product.addons && product.addons.length > 0),
         allowMultipleAddons: product.allowMultipleAddons ?? true,
-        addons: product.addons ? product.addons.map(a => ({ name: a.name, price: a.price || 0 })) : []
+        addons: product.addons ? product.addons.map(a => ({ name: a.name, price: a.price || 0 })) : [],
+        isActive: product.isActive ?? true,
+        isFeatured: product.isFeatured ?? false,
+        sortOrder: product.sortOrder || 0
     });
     setEditingId(product.id);
     setIsEditing(true);
@@ -242,7 +249,7 @@ export default function ProductManager({ categories, products }: { categories: C
                       type="checkbox"
                       checked={formData.hasFlavors}
                       onChange={(e) => setFormData({ ...formData, hasFlavors: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
                     />
                     <label htmlFor="hasFlavors" className="ml-2 block text-sm text-gray-900">
                       Este produto possui sabores?
@@ -278,7 +285,7 @@ export default function ProductManager({ categories, products }: { categories: C
                               <button
                                 type="button"
                                 onClick={() => handleRemoveFlavor(index)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-emerald-700 hover:text-emerald-900"
                               >
                                 Remover
                               </button>
@@ -297,7 +304,7 @@ export default function ProductManager({ categories, products }: { categories: C
                       type="checkbox"
                       checked={formData.hasAddons}
                       onChange={(e) => setFormData({ ...formData, hasAddons: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
                     />
                     <label htmlFor="hasAddons" className="ml-2 block text-sm text-gray-900">
                       Este produto possui Adicionais?
@@ -312,7 +319,7 @@ export default function ProductManager({ categories, products }: { categories: C
                           type="checkbox"
                           checked={formData.allowMultipleAddons}
                           onChange={(e) => setFormData({ ...formData, allowMultipleAddons: e.target.checked })}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
                         />
                         <label htmlFor="allowMultipleAddons" className="ml-2 block text-sm text-gray-900">
                           O cliente pode selecionar mais de um adicional?
@@ -362,7 +369,7 @@ export default function ProductManager({ categories, products }: { categories: C
                               <button
                                 type="button"
                                 onClick={() => handleRemoveAddon(index)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-emerald-700 hover:text-emerald-900"
                               >
                                 Remover
                               </button>
@@ -374,9 +381,39 @@ export default function ProductManager({ categories, products }: { categories: C
                   )}
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                    <label className="flex items-center gap-2 text-sm text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={formData.isActive}
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
+                      />
+                      Produto ativo
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={formData.isFeatured}
+                        onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                        className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
+                      />
+                      Destaque
+                    </label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Ordenação</label>
+                      <input
+                        type="number"
+                        value={formData.sortOrder}
+                        onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+                      />
+                    </div>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
                     <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancelar</button>
-                    <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    <button type="submit" disabled={loading} className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800">
                         {loading ? 'Salvando...' : 'Salvar'}
                     </button>
                 </div>
@@ -386,12 +423,14 @@ export default function ProductManager({ categories, products }: { categories: C
 
       <div className="space-y-8">
         {categories.map(category => {
-            const categoryProducts = products.filter(p => p.categoryId === category.id);
+            const categoryProducts = products
+              .filter(p => p.categoryId === category.id)
+              .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
             if (categoryProducts.length === 0) return null;
 
             return (
                 <div key={category.id}>
-                    <h3 className="font-bold text-lg text-gray-800 mb-3 px-2 py-1 bg-gray-100 rounded border-l-4 border-red-600">
+                    <h3 className="font-bold text-lg text-gray-800 mb-3 px-2 py-1 bg-gray-100 rounded border-l-4 border-emerald-700">
                         {category.name}
                     </h3>
                     <div className="space-y-3">
@@ -399,20 +438,29 @@ export default function ProductManager({ categories, products }: { categories: C
                             <div key={product.id} className="flex flex-col sm:flex-row items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow gap-4 sm:gap-0 bg-white">
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
                                     {product.imageUrl && (
-                                        <div className="w-12 h-12 rounded bg-gray-100 overflow-hidden shrink-0">
-                                            <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
-                                        </div>
+	                                        <div className="relative w-12 h-12 rounded bg-gray-100 overflow-hidden shrink-0">
+	                                            <Image src={product.imageUrl} alt={product.name} fill sizes="48px" className="object-cover" unoptimized />
+	                                        </div>
                                     )}
                                     <div>
                                         <h4 className="font-semibold text-gray-800">{product.name}</h4>
-                                        <p className="text-sm text-gray-500">R$ {(product.price || 0).toFixed(2)}</p>
+                                        <div className="mt-1 flex flex-wrap gap-1.5">
+                                          <p className="text-sm text-gray-500">R$ {(product.price || 0).toFixed(2)}</p>
+                                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${product.isActive === false ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
+                                            {product.isActive === false ? 'Inativo' : 'Ativo'}
+                                          </span>
+                                          {product.isFeatured && (
+                                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Destaque</span>
+                                          )}
+                                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">Ordem {product.sortOrder || 0}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                    <button onClick={() => handleEdit(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                                    <button onClick={() => handleEdit(product)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded">
                                         <Edit2 size={18} />
                                     </button>
-                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded">
                                         <Trash2 size={18} />
                                     </button>
                                 </div>

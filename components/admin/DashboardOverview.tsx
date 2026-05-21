@@ -13,11 +13,27 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { DollarSign, ShoppingBag, Users, Eye } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Eye, MousePointerClick } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-export default function DashboardOverview({ metrics }: { metrics: any }) {
+export type DashboardMetrics = {
+  revenue: { total: number; monthly: number };
+  orders: number;
+  visits: number;
+  topProducts: { name: string; views: number }[];
+  trafficSources: { name: string; value: number }[];
+  dailyRevenue: { date: string; total: number }[];
+  funnel: {
+    addToCart: number;
+    checkoutStarted: number;
+    orderCreated: number;
+    checkoutConversion: number;
+    cartConversion: number;
+  };
+};
+
+export default function DashboardOverview({ metrics }: { metrics: DashboardMetrics | null | undefined }) {
   if (!metrics) return <div className="p-4">Carregando métricas...</div>;
 
   return (
@@ -43,7 +59,7 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
                     <p className="text-sm text-gray-500 font-medium">Total de Pedidos</p>
                     <h3 className="text-2xl font-bold text-gray-900 mt-1">{metrics.orders}</h3>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700">
                     <ShoppingBag size={20} />
                 </div>
             </div>
@@ -65,8 +81,8 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
             <div className="flex justify-between items-start">
                 <div>
                     <p className="text-sm text-gray-500 font-medium">Visualizações (Produtos)</p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                        {metrics.topProducts.reduce((acc: number, curr: any) => acc + curr.views, 0)}
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                        {metrics.topProducts.reduce((acc, curr) => acc + curr.views, 0)}
                     </h3>
                 </div>
                 <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
@@ -91,7 +107,7 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
                         />
                         <YAxis fontSize={12} tickFormatter={(val) => `R$${val}`} />
                         <Tooltip 
-                            formatter={(value: any) => [`R$ ${Number(value).toFixed(2)}`, 'Faturamento']}
+                            formatter={(value) => [`R$ ${Number(value).toFixed(2)}`, 'Faturamento']}
                             labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
                         />
                         <Bar dataKey="total" fill="#16a34a" radius={[4, 4, 0, 0]} />
@@ -115,7 +131,7 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
                             paddingAngle={5}
                             dataKey="value"
                         >
-                            {metrics.trafficSources.map((entry: any, index: number) => (
+                            {metrics.trafficSources.map((_entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
@@ -127,11 +143,36 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
         </div>
       </div>
 
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <div className="mb-4 flex items-center gap-2">
+          <MousePointerClick className="text-emerald-700" size={20} />
+          <h3 className="text-lg font-bold text-gray-800">Funil de Conversao</h3>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div className="rounded-lg border bg-emerald-50/50 p-4">
+            <p className="text-sm text-gray-500">Adicionou ao carrinho</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.addToCart}</p>
+          </div>
+          <div className="rounded-lg border bg-emerald-50/50 p-4">
+            <p className="text-sm text-gray-500">Iniciou checkout</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.checkoutStarted}</p>
+          </div>
+          <div className="rounded-lg border bg-emerald-50/50 p-4">
+            <p className="text-sm text-gray-500">Pedido criado</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.orderCreated}</p>
+          </div>
+          <div className="rounded-lg border bg-emerald-50/50 p-4">
+            <p className="text-sm text-gray-500">Conv. checkout</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{(metrics.funnel.checkoutConversion * 100).toFixed(0)}%</p>
+          </div>
+        </div>
+      </div>
+
       {/* Top Products Table */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-gray-800 mb-4">Produtos Mais Acessados</h3>
           <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-600">
+                      <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-gray-700 uppercase font-medium">
                       <tr>
                           <th className="px-4 py-3">Produto</th>
@@ -140,15 +181,15 @@ export default function DashboardOverview({ metrics }: { metrics: any }) {
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                      {metrics.topProducts.map((product: any, index: number) => (
+                      {metrics.topProducts.map((product, index) => (
                           <tr key={index} className="hover:bg-gray-50">
                               <td className="px-4 py-3 font-medium text-gray-900">{product.name}</td>
                               <td className="px-4 py-3 text-right">{product.views}</td>
                               <td className="px-4 py-3">
                                   <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
                                       <div 
-                                          className="bg-blue-600 h-2 rounded-full" 
-                                          style={{ width: `${Math.min(100, (product.views / Math.max(...metrics.topProducts.map((p: any) => p.views), 1)) * 100)}%` }}
+                                          className="bg-emerald-700 h-2 rounded-full" 
+                                          style={{ width: `${Math.min(100, (product.views / Math.max(...metrics.topProducts.map((p) => p.views), 1)) * 100)}%` }}
                                       ></div>
                                   </div>
                               </td>

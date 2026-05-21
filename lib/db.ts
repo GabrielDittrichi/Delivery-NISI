@@ -11,6 +11,10 @@ export interface Restaurant {
   bannerUrl: string | null;
   logoUrl: string | null;
   primaryColor: string;
+  whatsapp?: string | null;
+  address?: string | null;
+  businessHours?: string | null;
+  institutionalText?: string | null;
 }
 
 export interface Category {
@@ -34,6 +38,9 @@ export interface Product {
   flavors: { id: string; name: string }[];
   addons: { id: string; name: string; price: number }[];
   allowMultipleAddons: boolean;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  sortOrder?: number;
 }
 
 export interface DataStore {
@@ -42,7 +49,339 @@ export interface DataStore {
   products: Product[];
 }
 
+export const defaultRestaurant: Restaurant = {
+  name: "Espaco Vida Saudavel NISI",
+  description: "Shakes, bebidas funcionais e opcoes proteicas para uma rotina mais leve.",
+  rating: 4.9,
+  deliveryTime: "15-25 min",
+  deliveryFee: 0,
+  minOrder: 0,
+  bannerUrl: "",
+  logoUrl: "",
+  primaryColor: "#16803C",
+  whatsapp: "",
+  address: "Av. Abilio Machado, 1.928 - sala 01 - Alipio de Melo",
+  businessHours: "",
+  institutionalText: "Cardapio saudavel com shakes, bebidas funcionais, salgados e sobremesas proteicas."
+};
+
+export const sampleCategories: Category[] = [
+  { id: "salgados", name: "Salgados", order: 0 },
+  { id: "bebidas", name: "Bebidas Funcionais", order: 1 },
+  { id: "sobremesas", name: "Sobremesas", order: 2 },
+  { id: "shakes", name: "Shakes", order: 3 },
+];
+
+export const commonAddons = [
+  { id: "addon-proteina", name: "Dose extra de proteina", price: 6 },
+  { id: "addon-fibra", name: "Fibra ativa", price: 4 },
+  { id: "addon-colageno", name: "Colageno", price: 5 },
+];
+
+export const sampleProducts: Product[] = [
+  {
+    id: "torta-frango",
+    categoryId: "salgados",
+    name: "Torta de Frango",
+    slug: "torta-de-frango",
+    description: "Versao com mais saciedade, mantendo o equilibrio e o sabor.",
+    price: 25,
+    imageUrl: null,
+    proteins: 45,
+    calories: 250,
+    weight: 300,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "empada-grande",
+    categoryId: "salgados",
+    name: "Empada Grande",
+    slug: "empada-grande",
+    description: "Combinacao de frango desfiado com alho-poro em uma opcao pratica e saborosa.",
+    price: 6,
+    imageUrl: null,
+    proteins: 7,
+    calories: 108,
+    weight: 50,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "empada-pequena",
+    categoryId: "salgados",
+    name: "Empada Pequena",
+    slug: "empada-pequena",
+    description: "Combinacao de frango desfiado com alho-poro em tamanho pequeno.",
+    price: 4,
+    imageUrl: null,
+    proteins: 7,
+    calories: 108,
+    weight: 30,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "omelete",
+    categoryId: "salgados",
+    name: "Omelete",
+    slug: "omelete",
+    description: "Acompanhado de salada fresca com tomate cereja, alface e cenoura ralada.",
+    price: 25,
+    imageUrl: null,
+    proteins: 30,
+    calories: 220,
+    weight: 350,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "pao-de-queijo",
+    categoryId: "salgados",
+    name: "Pao de Queijo",
+    slug: "pao-de-queijo",
+    description: "Opcao salgada pratica para acompanhar sua rotina.",
+    price: 4,
+    imageUrl: null,
+    proteins: 4,
+    calories: 76,
+    weight: 30,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "sanduiche-frango",
+    categoryId: "salgados",
+    name: "Sanduiche de Frango",
+    slug: "sanduiche-de-frango",
+    description: "Preparado com frango desfiado, pratico, nutritivo e rico em proteinas.",
+    price: 25,
+    imageUrl: null,
+    proteins: 45,
+    calories: 250,
+    weight: 300,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "sanduiche-atum",
+    categoryId: "salgados",
+    name: "Sanduiche de Atum",
+    slug: "sanduiche-de-atum",
+    description: "Opcao pratica, nutritiva e rica em proteinas.",
+    price: 25,
+    imageUrl: null,
+    proteins: 45,
+    calories: 250,
+    weight: 300,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "fibra-prebiotica",
+    categoryId: "bebidas",
+    name: "Fibra Prebiotica",
+    slug: "fibra-prebiotica",
+    description: "Fibra concentrada. Sabores: Manga, Uva e Limao.",
+    price: 28.9,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 500,
+    flavors: [
+      { id: "manga", name: "Manga" },
+      { id: "uva", name: "Uva" },
+      { id: "limao-fibra", name: "Limao" },
+    ],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+  {
+    id: "shot-matinal",
+    categoryId: "bebidas",
+    name: "Shot Matinal",
+    slug: "shot-matinal",
+    description: "Cha verde, cha preto, hibisco, cardamomo, malva e fibras prebioticas.",
+    price: 28.9,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 500,
+    flavors: [],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+  {
+    id: "energy",
+    categoryId: "bebidas",
+    name: "Energy",
+    slug: "energy",
+    description: "Cha verde, cha preto e erva mate.",
+    price: 28.9,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 500,
+    flavors: [],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+  {
+    id: "acelera",
+    categoryId: "bebidas",
+    name: "Acelera",
+    slug: "acelera",
+    description: "Cha verde, cha preto e erva mate.",
+    price: 28.9,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 500,
+    flavors: [],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+  {
+    id: "pudim",
+    categoryId: "sobremesas",
+    name: "Pudim",
+    slug: "pudim",
+    description: "Sobremesa proteica para uma pausa doce e equilibrada.",
+    price: 25,
+    imageUrl: null,
+    proteins: 19,
+    calories: 210,
+    weight: 200,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "shake-garrafa",
+    categoryId: "sobremesas",
+    name: "Shake de Garrafa",
+    slug: "shake-de-garrafa",
+    description: "Sobremesa cremosa em garrafa, pratica e proteica.",
+    price: 25,
+    imageUrl: null,
+    proteins: 19,
+    calories: 210,
+    weight: 200,
+    volume: 0,
+    flavors: [],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "bolo-pote",
+    categoryId: "sobremesas",
+    name: "Bolo de Pote",
+    slug: "bolo-de-pote",
+    description: "Bolo de pote proteico. Escolha seu sabor preferido.",
+    price: 25,
+    imageUrl: null,
+    proteins: 23,
+    calories: 240,
+    weight: 250,
+    volume: 0,
+    flavors: [
+      { id: "chokito", name: "Chokito" },
+      { id: "torta-limao", name: "Torta de Limao" },
+      { id: "pina-colada", name: "Pina Colada" },
+      { id: "prestigio", name: "Prestigio" },
+    ],
+    addons: [],
+    allowMultipleAddons: true,
+  },
+  {
+    id: "shake-sem-borda",
+    categoryId: "shakes",
+    name: "Shake sem Borda",
+    slug: "shake-sem-borda",
+    description: "Shake Herbalife com escolha de sabor, sem borda.",
+    price: 25,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 400,
+    flavors: [
+      { id: "pe-moleque", name: "Pe de Moleque" },
+      { id: "pina-colada-shake", name: "Pina Colada" },
+      { id: "chica-bom", name: "Chica Bom" },
+      { id: "prestigio-shake", name: "Prestigio" },
+      { id: "capuccino", name: "Capuccino" },
+      { id: "flocos", name: "Flocos" },
+      { id: "quick", name: "Quick" },
+      { id: "napolitano", name: "Napolitano" },
+      { id: "chokito-shake", name: "Chokito" },
+      { id: "frape-abacaxi", name: "Frape Abacaxi" },
+      { id: "frape-banana", name: "Frape Banana" },
+      { id: "mocaccino", name: "Mocaccino" },
+      { id: "oreo", name: "Oreo" },
+      { id: "frape-coco", name: "Frape Coco" },
+    ],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+  {
+    id: "shake-com-borda",
+    categoryId: "shakes",
+    name: "Shake com Borda",
+    slug: "shake-com-borda",
+    description: "Shake Herbalife com borda e escolha de sabor.",
+    price: 30,
+    imageUrl: null,
+    proteins: 0,
+    calories: 0,
+    weight: 0,
+    volume: 400,
+    flavors: [
+      { id: "doce-leite", name: "Doce de Leite" },
+      { id: "cookies-borda", name: "Cookies" },
+      { id: "coco-borda", name: "Coco" },
+      { id: "chocolate-borda", name: "Chocolate" },
+      { id: "cafe-borda", name: "Cafe" },
+      { id: "morango-borda", name: "Morango" },
+      { id: "limao-borda", name: "Limao" },
+      { id: "pistache-borda", name: "Pistache" },
+      { id: "banana-borda", name: "Banana" },
+      { id: "abacaxi-borda", name: "Abacaxi" },
+      { id: "baunilha-borda", name: "Baunilha" },
+    ],
+    addons: commonAddons,
+    allowMultipleAddons: true,
+  },
+];
+
 export async function getData(): Promise<DataStore> {
+  // Allow builds/previews to run without a database configured.
+  if (!process.env.DATABASE_URL) {
+    return {
+      restaurant: defaultRestaurant,
+      categories: sampleCategories,
+      products: sampleProducts
+    };
+  }
   try {
     const restaurant = await prisma.restaurant.findFirst();
     const categories = await prisma.category.findMany({
@@ -53,17 +392,7 @@ export async function getData(): Promise<DataStore> {
     });
 
     return {
-      restaurant: restaurant || {
-        name: "Novo Restaurante",
-        description: "",
-        rating: 0,
-        deliveryTime: "0 min",
-        deliveryFee: 0,
-        minOrder: 0,
-        bannerUrl: "",
-        logoUrl: "",
-        primaryColor: "#EA1D2C"
-      },
+      restaurant: restaurant || defaultRestaurant,
       categories,
       products: products.map(product => ({
         ...product,
@@ -80,6 +409,9 @@ export async function getData(): Promise<DataStore> {
 }
 
 export async function getProducts(categoryId?: string): Promise<Product[]> {
+  if (!process.env.DATABASE_URL) {
+    return categoryId ? sampleProducts.filter((p) => p.categoryId === categoryId) : sampleProducts;
+  }
   const where = categoryId ? { categoryId } : {};
   const products = await prisma.product.findMany({
     where,
@@ -94,6 +426,7 @@ export async function getProducts(categoryId?: string): Promise<Product[]> {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
+  if (!process.env.DATABASE_URL) return sampleProducts.find((p) => p.id === id) ?? null;
   const product = await prisma.product.findUnique({
     where: { id },
     include: { flavors: true, addons: true }
@@ -108,6 +441,7 @@ export async function getProductById(id: string): Promise<Product | null> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  if (!process.env.DATABASE_URL) return sampleProducts.find((p) => p.slug === slug);
   const product = await prisma.product.findUnique({
     where: { slug },
     include: { flavors: true, addons: true }

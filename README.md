@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Espaco Vida Saudavel NISI
 
-## Getting Started
+Cardapio digital e painel administrativo para o Espaco Vida Saudavel NISI.
 
-First, run the development server:
+## Stack
+
+- Next.js 16
+- React 19
+- Tailwind CSS 4
+- Prisma + PostgreSQL
+- Cloudflare R2/S3 para upload de imagens
+
+## Setup local
+
+1. Instale dependencias:
+
+```bash
+npm ci
+```
+
+2. Crie `.env.local` baseado no `.env.example`:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/delivery_nisi
+NEXT_PUBLIC_WHATSAPP_NUMBER=5599999999999
+NEXT_PUBLIC_GTM_ID=
+NEXT_PUBLIC_GA_ID=
+NEXT_PUBLIC_META_PIXEL_ID=
+ADMIN_USERS=nicelia,silvio,abner,rds
+ADMIN_PASS=nisi@2026cardapio
+```
+
+3. Rode migrations e seed:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+4. Suba o projeto:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Admin
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+O admin fica em `/admin` e usa Basic Auth.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Usuarios configurados por `ADMIN_USERS`:
 
-## Learn More
+- `nicelia`
+- `silvio`
+- `abner`
+- `rds`
 
-To learn more about Next.js, take a look at the following resources:
+Senha padrao:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `nisi@2026cardapio`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+npm run lint
+npm run typecheck
+npm run test:smoke
+npm run build
+npm run prisma:migrate
+npm run prisma:seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Operacao
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Healthcheck: `/api/health`
+- Eventos de funil: `add_to_cart`, `checkout_started`, `order_created`
+- Visitas: `/api/track`
+- Cardapio presencial sem pedidos: `/cardapio`
+- Cupons: `NISI10` vem no seed inicial
+
+## Supabase
+
+Use o Postgres do Supabase preenchendo `DATABASE_URL` com a connection string do projeto. Depois rode:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+As tabelas principais ficam cobertas por Prisma: restaurante, categorias, produtos, sabores, adicionais, cupons, pedidos, itens do pedido, visitas e eventos de funil. A aba `Clientes` agrega os dados dos pedidos pelo telefone do checkout.
+
+## Google e Meta
+
+Configure quando tiver os IDs:
+
+- `NEXT_PUBLIC_GTM_ID`
+- `NEXT_PUBLIC_GA_ID`
+- `NEXT_PUBLIC_META_PIXEL_ID`
+
+Eventos enviados: `PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout`, `Purchase` e `ApplyCoupon`.
+
+## Observacoes
+
+Sem `DATABASE_URL`, o app usa os produtos reais do PDF como fallback local. Com banco configurado, usa os dados cadastrados no admin/Supabase.

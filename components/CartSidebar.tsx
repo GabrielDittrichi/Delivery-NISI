@@ -1,10 +1,11 @@
 'use client'
 
 import { useCart } from '@/context/CartContext';
-import { X, Minus, Plus, Trash2 } from 'lucide-react';
+import { X, Minus, Plus, Trash2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export default function CartSidebar() {
   const { 
@@ -15,6 +16,8 @@ export default function CartSidebar() {
     removeFromCart, 
     cartTotal 
   } = useCart();
+
+  const shouldSuggestMore = items.length > 0 && cartTotal < 30;
 
   // Prevent scrolling when cart is open
   useEffect(() => {
@@ -49,7 +52,10 @@ export default function CartSidebar() {
               className="w-screen max-w-md bg-white shadow-xl flex flex-col h-full"
             >
               <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-lg font-semibold text-gray-900">Seu Carrinho</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Seu pedido no NISI</h2>
+                  <p className="text-xs text-gray-500">Resumo pronto para finalizar com o atendimento.</p>
+                </div>
                 <button 
                   onClick={() => setIsCartOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
@@ -61,10 +67,11 @@ export default function CartSidebar() {
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {items.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                    <p>Seu carrinho está vazio.</p>
+                    <p>Seu pedido ainda esta vazio.</p>
                     <button 
                       onClick={() => setIsCartOpen(false)}
-                      className="mt-4 text-green-600 font-medium hover:underline"
+                      className="mt-4 font-medium hover:underline"
+                      style={{ color: 'var(--brand)' }}
                     >
                       Continuar comprando
                     </button>
@@ -74,7 +81,14 @@ export default function CartSidebar() {
                     <div key={`${item.id}-${item.selectedFlavor || ''}-${JSON.stringify(item.selectedAddons || [])}-${index}`} className="flex gap-4 py-4 border-b last:border-0">
                        {item.imageUrl && (
                          <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                           <Image
+                             src={item.imageUrl}
+                             alt={item.name}
+                             width={80}
+                             height={80}
+                             className="w-full h-full object-cover"
+                             unoptimized
+                           />
                          </div>
                        )}
                        <div className="flex-1 flex flex-col justify-between">
@@ -100,7 +114,7 @@ export default function CartSidebar() {
                            </div>
                            <button 
                              onClick={() => removeFromCart(item.id, item.selectedFlavor, item.selectedAddons)}
-                             className="text-gray-400 hover:text-red-500 p-1 h-fit"
+                             className="text-gray-400 hover:text-emerald-700 p-1 h-fit"
                            >
                              <Trash2 size={18} />
                            </button>
@@ -116,7 +130,8 @@ export default function CartSidebar() {
                              <span className="w-8 text-center text-sm font-medium text-gray-900">{item.quantity}</span>
                              <button 
                                onClick={() => updateQuantity(item.id, item.quantity + 1, item.selectedFlavor, item.selectedAddons)}
-                               className="w-8 h-full flex items-center justify-center text-green-600 hover:bg-gray-50"
+                               className="w-8 h-full flex items-center justify-center hover:bg-gray-50"
+                               style={{ color: 'var(--brand)' }}
                              >
                                <Plus size={14} />
                              </button>
@@ -137,15 +152,28 @@ export default function CartSidebar() {
                     <span>Total</span>
                     <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
                   </div>
-                  <p className="text-xs text-gray-500 text-center bg-yellow-50 p-2 rounded border border-yellow-100">
-                    🛵 Frete calculado no atendimento
+                  <p className="text-xs text-gray-600 text-center bg-white p-2 rounded border" style={{ borderColor: 'var(--border)' }}>
+                    Frete e horarios confirmados no atendimento.
                   </p>
+                  {shouldSuggestMore && (
+                    <Link
+                      href="/#destaques"
+                      onClick={() => setIsCartOpen(false)}
+                      className="block w-full rounded-lg border bg-white px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-emerald-50"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      <span className="block font-semibold text-emerald-800">Complete sua rotina</span>
+                      <span>Veja shakes, bebidas e sobremesas antes de finalizar.</span>
+                    </Link>
+                  )}
                   <Link 
                     href="/checkout"
                     onClick={() => setIsCartOpen(false)}
-                    className="block w-full bg-green-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    className="flex w-full items-center justify-center gap-2 text-white text-center py-3 rounded-lg font-semibold transition-all active:scale-[0.99]"
+                    style={{ backgroundColor: 'var(--brand)' }}
                   >
-                    Finalizar Pedido
+                    <MessageCircle size={18} />
+                    Continuar para checkout
                   </Link>
                 </div>
               )}

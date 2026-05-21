@@ -2,6 +2,54 @@
 
 import { prisma } from './prisma';
 
+type CartAddon = { id: string; name: string; price: number };
+type CartItemInput = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  selectedFlavor?: string;
+  selectedAddons?: string[];
+  addons?: CartAddon[];
+};
+
+type CreateOrderInput = {
+  name: string;
+  phone: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  paymentMethod: string;
+  deliveryMethod?: 'DELIVERY' | 'PICKUP';
+  observations?: string;
+  subtotal: number;
+  deliveryFee: number;
+  discount: number;
+  total: number;
+  couponCode?: string;
+  items: CartItemInput[];
+};
+
+type AnalyticsEventType = 'visit' | 'product_view' | 'add_to_cart' | 'checkout_started' | 'order_created';
+
+export async function trackEvent(type: AnalyticsEventType, metadata?: Record<string, unknown>) {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    await prisma.analyticsEvent.create({
+      data: {
+        type,
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to track event ${type}:`, error);
+  }
+}
+
 export async function trackVisit(data: {
   userAgent?: string;
   referer?: string;
@@ -10,6 +58,12 @@ export async function trackVisit(data: {
   city?: string;
   country?: string;
 }) {
+  if (!process.env.DATABASE_URL) return;
+  await trackEvent('visit', {
+    referer: data.referer || null,
+    platform: data.platform || determinePlatform(data.referer),
+  });
+
   try {
     await prisma.visit.create({
       data: {
@@ -27,6 +81,9 @@ export async function trackVisit(data: {
 }
 
 export async function trackProductView(productId: string) {
+  if (!process.env.DATABASE_URL) return;
+  await trackEvent('product_view', { productId });
+
   try {
     await prisma.productView.create({
       data: {
@@ -38,7 +95,11 @@ export async function trackProductView(productId: string) {
   }
 }
 
-export async function createOrder(orderData: any) {
+export async function createOrder(orderData: CreateOrderInput) {
+  if (!process.env.DATABASE_URL) {
+    return { success: true, orderId: `local-${Date.now()}` };
+  }
+
   try {
     const order = await prisma.order.create({
       data: {
@@ -52,24 +113,48 @@ export async function createOrder(orderData: any) {
         city: orderData.city,
         state: orderData.state,
         paymentMethod: orderData.paymentMethod,
+        deliveryMethod: orderData.deliveryMethod || 'DELIVERY',
         observations: orderData.observations,
         subtotal: orderData.subtotal,
         deliveryFee: orderData.deliveryFee,
         discount: orderData.discount,
         total: orderData.total,
         items: {
-            create: orderData.items.map((item: any) => ({
-                productId: item.id,
-                productName: item.name,
-                quantity: item.quantity,
-                price: item.price,
-                total: item.price * item.quantity, // Simplificação, idealmente calcula com addons
-                selectedFlavor: item.selectedFlavor || null,
-                selectedAddons: item.selectedAddons ? JSON.stringify(item.selectedAddons) : null
-            }))
-        }
+          create: orderData.items.map((item) => {
+            const selectedAddonIds = item.selectedAddons ?? [];
+            const addonsTotal = selectedAddonIds.reduce((acc, addonId) => {
+              const addon = item.addons?.find((a) => a.id === addonId);
+              return acc + (addon?.price ?? 0);
+            }, 0);
+
+            const unitWithAddons = item.price + addonsTotal;
+            const lineTotal = unitWithAddons * item.quantity;
+
+            return {
+              productId: item.id,
+              productName: item.name,
+              quantity: item.quantity,
+              price: unitWithAddons, // unit snapshot including addons
+              total: lineTotal,
+              selectedFlavor: item.selectedFlavor || null,
+              selectedAddons: selectedAddonIds.length > 0 ? JSON.stringify(selectedAddonIds) : null,
+            };
+          }),
+        },
       },
     });
+    await trackEvent('order_created', {
+      orderId: order.id,
+      total: order.total,
+      deliveryMethod: order.deliveryMethod,
+      items: orderData.items.length,
+    });
+    if (orderData.couponCode) {
+      await prisma.coupon.update({
+        where: { code: orderData.couponCode },
+        data: { usedCount: { increment: 1 } },
+      }).catch(() => {});
+    }
     return { success: true, orderId: order.id };
   } catch (error) {
     console.error('Failed to create order:', error);
@@ -78,6 +163,24 @@ export async function createOrder(orderData: any) {
 }
 
 export async function getDashboardMetrics() {
+    if (!process.env.DATABASE_URL) {
+        return {
+            revenue: { total: 0, monthly: 0 },
+            orders: 0,
+            visits: 0,
+            funnel: {
+                addToCart: 0,
+                checkoutStarted: 0,
+                orderCreated: 0,
+                checkoutConversion: 0,
+                cartConversion: 0,
+            },
+            topProducts: [],
+            trafficSources: [],
+            dailyRevenue: [],
+        };
+    }
+
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
@@ -103,6 +206,9 @@ export async function getDashboardMetrics() {
 
     // Visitantes Únicos (simplificado por IP ou sessão seria ideal, aqui contagem bruta)
     const totalVisits = await prisma.visit.count();
+    const addToCartEvents = await prisma.analyticsEvent.count({ where: { type: 'add_to_cart' } });
+    const checkoutStartedEvents = await prisma.analyticsEvent.count({ where: { type: 'checkout_started' } });
+    const orderCreatedEvents = await prisma.analyticsEvent.count({ where: { type: 'order_created' } });
 
     // Produtos mais acessados (Top 5)
     const topProductsRaw = await prisma.productView.groupBy({
@@ -155,6 +261,13 @@ export async function getDashboardMetrics() {
         },
         orders: totalOrders,
         visits: totalVisits,
+        funnel: {
+            addToCart: addToCartEvents,
+            checkoutStarted: checkoutStartedEvents,
+            orderCreated: orderCreatedEvents,
+            checkoutConversion: checkoutStartedEvents > 0 ? orderCreatedEvents / checkoutStartedEvents : 0,
+            cartConversion: addToCartEvents > 0 ? orderCreatedEvents / addToCartEvents : 0,
+        },
         topProducts,
         trafficSources: trafficSources.map(t => ({ name: t.platform || 'Direto', value: t._count.platform })),
         dailyRevenue

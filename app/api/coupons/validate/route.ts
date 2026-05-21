@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { findMemoryCoupon } from '@/lib/coupons';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code } = body;
+    const { code, total = 0 } = body;
 
     if (!code) {
       return NextResponse.json(
@@ -13,11 +14,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const coupon = await prisma.coupon.findUnique({
-      where: {
-        code: code.toUpperCase(),
-      },
-    });
+    const coupon = process.env.DATABASE_URL
+      ? await prisma.coupon.findUnique({
+          where: {
+            code: code.toUpperCase(),
+          },
+        })
+      : findMemoryCoupon(code);
 
     if (!coupon) {
       return NextResponse.json(
@@ -33,11 +36,33 @@ export async function POST(request: Request) {
         );
     }
 
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      return NextResponse.json(
+        { message: 'Este cupom está vencido' },
+        { status: 400 }
+      );
+    }
+
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+      return NextResponse.json(
+        { message: 'Este cupom atingiu o limite de usos' },
+        { status: 400 }
+      );
+    }
+
+    if (coupon.minOrder > 0 && Number(total) < coupon.minOrder) {
+      return NextResponse.json(
+        { message: `Pedido mínimo de R$ ${coupon.minOrder.toFixed(2).replace('.', ',')} para este cupom` },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({
         id: coupon.id,
         code: coupon.code,
         type: coupon.type,
-        value: coupon.value
+        value: coupon.value,
+        minOrder: coupon.minOrder,
     });
 
   } catch (error) {

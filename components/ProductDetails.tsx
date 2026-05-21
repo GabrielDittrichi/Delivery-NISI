@@ -2,11 +2,13 @@
 
 import { Product } from '@/lib/db';
 import Link from 'next/link';
-import { ArrowLeft, Minus, Plus, X, ZoomIn } from 'lucide-react';
+import { ArrowLeft, Leaf, Minus, Plus, X, ZoomIn } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { trackProductView } from '@/lib/analytics';
+import { trackMarketingEvent } from '@/lib/tracking';
+import Image from 'next/image';
 
 export default function ProductDetails({ product, primaryColor }: { product: Product, primaryColor: string }) {
   const [quantity, setQuantity] = useState(1);
@@ -18,7 +20,26 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
 
   useEffect(() => {
     trackProductView(product.id);
-  }, [product.id]);
+    trackMarketingEvent('ViewContent', {
+      content_ids: [product.id],
+      content_name: product.name,
+      currency: 'BRL',
+      value: product.price,
+    });
+  }, [product.id, product.name, product.price]);
+
+  useEffect(() => {
+    if (!isImageOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsImageOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isImageOpen]);
 
   const handleAddToCart = () => {
     addToCart(product, quantity, selectedFlavor, selectedAddons);
@@ -50,25 +71,36 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
              <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
                  <ArrowLeft size={24} color={primaryColor} />
              </Link>
-             <h1 className="ml-2 font-medium text-lg text-gray-800">Detalhes do Produto</h1>
+             <h1 className="ml-2 font-medium text-lg text-gray-800">Monte sua opcao</h1>
          </div>
        </div>
 
        <div className="container mx-auto max-w-2xl">
-          {product.imageUrl && (
+          {product.imageUrl ? (
               <div 
                 className="w-full h-64 md:h-80 bg-white relative cursor-pointer group overflow-hidden"
                 onClick={() => setIsImageOpen(true)}
               >
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name} 
-                    className="w-full h-full object-contain bg-white"
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="object-contain bg-white"
+                    unoptimized
                   />
                   <div className="absolute inset-0 transition-all flex items-center justify-center hover:bg-black/10">
                     <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" size={32} />
                   </div>
               </div>
+          ) : (
+            <div className="flex h-64 w-full items-center justify-center bg-emerald-50 text-emerald-700 md:h-80">
+              <div className="text-center">
+                <Leaf size={42} className="mx-auto mb-3" />
+                <p className="text-sm font-semibold">Opcao saudavel NISI</p>
+              </div>
+            </div>
           )}
 
           {/* Lightbox Modal */}
@@ -83,12 +115,16 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
               >
                 <X size={32} />
               </button>
-              <img 
-                src={product.imageUrl} 
-                alt={product.name} 
-                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-                onClick={(e) => e.stopPropagation()} 
-              />
+              <div className="relative w-full max-w-5xl h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  fill
+                  sizes="100vw"
+                  className="object-contain rounded-lg shadow-2xl"
+                  unoptimized
+                />
+              </div>
             </div>
           )}
 
@@ -125,17 +161,17 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
 
               {product.flavors && product.flavors.length > 0 && (
                   <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Escolha um sabor</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Escolha seu sabor</h3>
                       <div className="space-y-2">
                           {product.flavors.map((flavor) => (
-                              <label key={flavor.id} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                              <label key={flavor.id} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-emerald-50">
                                   <input
                                       type="radio"
                                       name="flavor"
                                       value={flavor.id}
                                       checked={selectedFlavor === flavor.id}
                                       onChange={() => setSelectedFlavor(flavor.id)}
-                                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                                      className="w-4 h-4 border-gray-300 focus:ring-[var(--brand)]"
                                       style={{ color: primaryColor }}
                                   />
                                   <span className="ml-3 text-gray-900">{flavor.name}</span>
@@ -147,21 +183,26 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
 
               {product.addons && product.addons.length > 0 && (
                   <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Adicionais (opcional)</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Adicionais para sua rotina</h3>
                       <div className="space-y-2">
                           {product.addons.map((addon) => (
-                              <label key={addon.id} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                              <label key={addon.id} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-emerald-50">
                                   <input
                                       type={product.allowMultipleAddons ? "checkbox" : "radio"}
                                       name="addon"
                                       value={addon.id}
                                       checked={selectedAddons.includes(addon.id)}
                                       onChange={() => handleAddonToggle(addon.id)}
-                                      className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500 rounded"
+                                      className="w-4 h-4 border-gray-300 focus:ring-[var(--brand)] rounded"
                                       style={{ color: primaryColor }}
                                   />
                                   <span className="ml-3 text-gray-900 flex-1">
-                                      {addon.name}
+                                      <span>{addon.name}</span>
+                                      <span className="block text-xs text-gray-500">
+                                        {addon.name.toLowerCase().includes('prote') && 'Mais proteina no seu pedido'}
+                                        {addon.name.toLowerCase().includes('fibra') && 'Apoio para sua rotina de fibras'}
+                                        {addon.name.toLowerCase().includes('colageno') && 'Complemento para sua rotina'}
+                                      </span>
                                       {addon.price > 0 && (
                                           <span className="text-gray-500 text-sm ml-2">
                                               (+ R$ {addon.price.toFixed(2).replace('.', ',')})
@@ -208,8 +249,9 @@ export default function ProductDetails({ product, primaryColor }: { product: Pro
                   disabled={product.flavors && product.flavors.length > 0 && !selectedFlavor}
                   className="flex-1 h-12 rounded-lg font-semibold text-white flex items-center justify-center gap-2 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: primaryColor }}
+                  title={product.flavors && product.flavors.length > 0 && !selectedFlavor ? 'Escolha um sabor para continuar' : undefined}
                >
-                   <span>Adicionar</span>
+                   <span>Adicionar ao pedido</span>
                    <span className="bg-black/20 px-2 py-0.5 rounded text-sm">
                        R$ {(currentPrice * quantity).toFixed(2).replace('.', ',')}
                    </span>

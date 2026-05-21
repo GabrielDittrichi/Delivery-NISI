@@ -72,7 +72,7 @@ export default function CategoryManager({ categories }: { categories: Category[]
                     <div className="w-px h-6 bg-gray-300 mx-2"></div>
                     <button 
                         onClick={() => handleDelete(cat.id)}
-                        className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors"
+                        className="text-emerald-700 hover:text-emerald-900 p-2 hover:bg-emerald-50 rounded-full transition-colors"
                         title="Excluir"
                     >
                         <Trash2 size={18} />

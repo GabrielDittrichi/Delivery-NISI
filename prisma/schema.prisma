@@ -19,6 +19,10 @@ model Restaurant {
   bannerUrl    String?
   logoUrl      String?
   primaryColor String @default("#16a34a")
+  whatsapp     String?
+  address      String?
+  businessHours String?
+  institutionalText String?
 }
 
 model Category {
@@ -44,6 +48,9 @@ model Product {
   flavors     Flavor[]
   addons      Addon[]
   allowMultipleAddons Boolean @default(true)
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
   orderItems  OrderItem[]
   views       ProductView[]
 }
@@ -64,13 +71,17 @@ model Addon {
 }
 
 model Coupon {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  type      String   @default("PERCENTAGE") // PERCENTAGE | FIXED
-  value     Float
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  code       String    @unique
+  type       String    @default("PERCENTAGE") // PERCENTAGE | FIXED
+  value      Float
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime?
+  usageLimit Int?
+  usedCount  Int       @default(0)
+  minOrder   Float     @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 // Analytics & Orders
@@ -90,6 +101,7 @@ model Order {
   state          String
   
   paymentMethod  String
+  deliveryMethod String      @default("DELIVERY") // DELIVERY, PICKUP
   observations   String?
   
   subtotal       Float
@@ -135,4 +147,14 @@ model ProductView {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
 }

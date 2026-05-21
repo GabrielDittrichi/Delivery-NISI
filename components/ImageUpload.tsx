@@ -2,8 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { Upload, X, Loader2, Check } from 'lucide-react';
-import Cropper from 'react-easy-crop';
+import Cropper, { Area } from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
+import Image from 'next/image';
 
 interface ImageUploadProps {
   value?: string;
@@ -18,9 +19,9 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -128,7 +129,7 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
               type="button"
               onClick={handleCropSave}
               disabled={uploading}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 transition-colors flex items-center gap-2"
             >
               {uploading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
               Salvar
@@ -149,15 +150,18 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
             <button
               type="button"
               onClick={handleRemove}
-              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+              className="bg-emerald-700 text-white p-1 rounded-full hover:bg-emerald-800 transition-colors"
             >
               <X size={16} />
             </button>
           </div>
-          <img
+          <Image
             src={value}
             alt={label}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover"
+            unoptimized
           />
         </div>
       ) : (

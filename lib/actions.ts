@@ -25,6 +25,10 @@ export async function updateRestaurant(restaurantData: Restaurant) {
         bannerUrl: restaurantData.bannerUrl,
         logoUrl: restaurantData.logoUrl,
         primaryColor: restaurantData.primaryColor,
+        whatsapp: restaurantData.whatsapp,
+        address: restaurantData.address,
+        businessHours: restaurantData.businessHours,
+        institutionalText: restaurantData.institutionalText,
       },
     });
   } else {
@@ -40,6 +44,10 @@ export async function updateRestaurant(restaurantData: Restaurant) {
         bannerUrl: restaurantData.bannerUrl,
         logoUrl: restaurantData.logoUrl,
         primaryColor: restaurantData.primaryColor,
+        whatsapp: restaurantData.whatsapp,
+        address: restaurantData.address,
+        businessHours: restaurantData.businessHours,
+        institutionalText: restaurantData.institutionalText,
       },
     });
   }
@@ -108,6 +116,7 @@ await prisma.category.update({
 }
 
 export async function getOrders() {
+  if (!process.env.DATABASE_URL) return [];
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -115,6 +124,63 @@ export async function getOrders() {
     }
   });
   return orders;
+}
+
+export async function getCustomers() {
+  const orders = await getOrders();
+  const customers = new Map<string, {
+    name: string;
+    phone: string;
+    cep: string;
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    deliveryMethod: string;
+    ordersCount: number;
+    lastOrderAt: Date | string;
+    totalSpent: number;
+  }>();
+
+  for (const order of orders) {
+    const phone = order.customerPhone.replace(/\D/g, '') || order.customerPhone;
+    const existing = customers.get(phone);
+    const orderDate = order.createdAt;
+
+    if (!existing) {
+      customers.set(phone, {
+        name: order.customerName,
+        phone: order.customerPhone,
+        cep: order.cep,
+        street: order.street,
+        number: order.number,
+        neighborhood: order.neighborhood,
+        city: order.city,
+        deliveryMethod: order.deliveryMethod,
+        ordersCount: 1,
+        lastOrderAt: orderDate,
+        totalSpent: order.total,
+      });
+      continue;
+    }
+
+    existing.ordersCount += 1;
+    existing.totalSpent += order.total;
+    if (new Date(orderDate) > new Date(existing.lastOrderAt)) {
+      existing.name = order.customerName;
+      existing.cep = order.cep;
+      existing.street = order.street;
+      existing.number = order.number;
+      existing.neighborhood = order.neighborhood;
+      existing.city = order.city;
+      existing.deliveryMethod = order.deliveryMethod;
+      existing.lastOrderAt = orderDate;
+    }
+  }
+
+  return Array.from(customers.values()).sort(
+    (a, b) => new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime()
+  );
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
@@ -169,13 +235,16 @@ export async function addProduct(product: Omit<Product, 'id' | 'slug' | 'flavors
       volume: product.volume || 0,
       categoryId: product.categoryId,
       allowMultipleAddons: product.allowMultipleAddons,
+      isActive: product.isActive ?? true,
+      isFeatured: product.isFeatured ?? false,
+      sortOrder: product.sortOrder || 0,
       flavors: {
         create: product.flavors?.map(name => ({ name })) || []
       },
       addons: {
-        create: product.addons?.map((addon: any) => ({ 
-          name: typeof addon === 'string' ? addon : addon.name, 
-          price: typeof addon === 'string' ? 0 : (addon.price || 0) 
+        create: product.addons?.map((addon) => ({
+          name: addon.name,
+          price: addon.price || 0
         })) || []
       }
     },
@@ -207,13 +276,16 @@ export async function updateProduct(product: Omit<Product, 'slug' | 'flavors' | 
       volume: product.volume || 0,
       categoryId: product.categoryId,
       allowMultipleAddons: product.allowMultipleAddons,
+      isActive: product.isActive ?? true,
+      isFeatured: product.isFeatured ?? false,
+      sortOrder: product.sortOrder || 0,
       flavors: {
         create: product.flavors?.map(name => ({ name })) || []
       },
       addons: {
-        create: product.addons?.map((addon: any) => ({ 
-          name: typeof addon === 'string' ? addon : addon.name, 
-          price: typeof addon === 'string' ? 0 : (addon.price || 0) 
+        create: product.addons?.map((addon) => ({
+          name: addon.name,
+          price: addon.price || 0
         })) || []
       }
     },

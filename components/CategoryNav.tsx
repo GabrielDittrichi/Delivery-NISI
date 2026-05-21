@@ -1,11 +1,11 @@
 'use client'
 import { Category } from '@/lib/db';
-import { useState, useEffect } from 'react';
-import clsx from 'clsx';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 export default function CategoryNav({ categories, primaryColor }: { categories: Category[], primaryColor: string }) {
   const [activeId, setActiveId] = useState<string>(categories[0]?.id || '');
+  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -17,8 +17,8 @@ export default function CategoryNav({ categories, primaryColor }: { categories: 
         });
       },
       {
-        rootMargin: '-10% 0px -80% 0px',
-        threshold: 0
+        rootMargin: '-18% 0px -72% 0px',
+        threshold: 0.01
       }
     );
 
@@ -29,6 +29,14 @@ export default function CategoryNav({ categories, primaryColor }: { categories: 
 
     return () => observer.disconnect();
   }, [categories]);
+
+  useEffect(() => {
+    linkRefs.current[activeId]?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    });
+  }, [activeId]);
 
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -45,9 +53,12 @@ export default function CategoryNav({ categories, primaryColor }: { categories: 
         {categories.map((cat) => (
             <a
               key={cat.id}
+              ref={(node) => {
+                linkRefs.current[cat.id] = node;
+              }}
               href={`#cat-${cat.id}`}
               onClick={(e) => handleScroll(e, cat.id)}
-              className="relative whitespace-nowrap text-sm font-medium h-full flex items-center justify-center transition-colors cursor-pointer"
+              className="relative whitespace-nowrap text-sm font-semibold h-full flex items-center justify-center transition-colors cursor-pointer"
               style={{
                   color: activeId === cat.id ? primaryColor : '#6b7280'
               }}

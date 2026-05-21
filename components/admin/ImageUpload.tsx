@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Upload, Copy, Check, Image as ImageIcon } from 'lucide-react';
+import { Copy, Check, Image as ImageIcon } from 'lucide-react';
 
 export default function ImageUpload({ onUploadComplete }: { onUploadComplete?: (url: string) => void }) {
   const [file, setFile] = useState<File | null>(null);
@@ -46,7 +46,7 @@ export default function ImageUpload({ onUploadComplete }: { onUploadComplete?: (
             onUploadComplete(url);
         }
       }
-    } catch (error) {
+    } catch {
       setMessage('Erro ao fazer upload');
     } finally {
       setUploading(false);
@@ -72,19 +72,19 @@ export default function ImageUpload({ onUploadComplete }: { onUploadComplete?: (
                 type="file" 
                 accept="image/*"
                 onChange={handleFileChange}
-                className="w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
             />
             <button
                 onClick={handleUpload}
                 disabled={uploading || !file}
-                className="w-full sm:w-auto bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="w-full sm:w-auto bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-emerald-800 disabled:opacity-50 transition-colors"
             >
                 {uploading ? '...' : 'Enviar'}
             </button>
         </div>
 
         {message && (
-            <p className={`text-xs font-medium ${message.includes('sucesso') ? 'text-green-600' : 'text-red-500'}`}>
+            <p className={`text-xs font-medium ${message.includes('sucesso') ? 'text-green-600' : 'text-emerald-700'}`}>
                 {message}
             </p>
         )}

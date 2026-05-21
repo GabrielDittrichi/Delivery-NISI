@@ -38,6 +38,46 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             rows={3}
           />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">WhatsApp</label>
+            <input
+              type="text"
+              value={formData.whatsapp || ''}
+              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+              placeholder="5531999999999"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Horário de funcionamento</label>
+            <input
+              type="text"
+              value={formData.businessHours || ''}
+              onChange={(e) => setFormData({ ...formData, businessHours: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+              placeholder="Seg a Sex, 8h às 18h"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Endereço</label>
+          <input
+            type="text"
+            value={formData.address || ''}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Texto institucional</label>
+          <textarea
+            value={formData.institutionalText || ''}
+            onChange={(e) => setFormData({ ...formData, institutionalText: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
+            rows={3}
+          />
+        </div>
          <div>
           <ImageUpload
             label="Banner do Restaurante"
@@ -102,7 +142,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
         <button
           type="submit"
           disabled={loading}
-          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 font-medium"
+          className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 disabled:opacity-50 font-medium"
         >
           {loading ? 'Salvando...' : 'Salvar Alterações'}
         </button>

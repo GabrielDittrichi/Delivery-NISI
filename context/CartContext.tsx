@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product } from '@/lib/db';
+import { trackMarketingEvent } from '@/lib/tracking';
 
 export interface CartItem extends Product {
   quantity: number;
@@ -23,21 +24,35 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+function trackClientEvent(type: 'add_to_cart', metadata?: Record<string, unknown>) {
+  fetch('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, metadata }),
+    keepalive: true,
+  }).catch(() => {});
+}
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart", e);
-      }
+function sameSelection(
+  itemAddons: string[] | undefined,
+  targetAddons: string[] | undefined
+) {
+  const current = [...(itemAddons || [])].sort();
+  const target = [...(targetAddons || [])].sort();
+  return current.length === target.length && current.every((val, index) => val === target[index]);
+}
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const savedCart = localStorage.getItem('cart');
+      return savedCart ? (JSON.parse(savedCart) as CartItem[]) : [];
+    } catch {
+      return [];
     }
-  }, []);
+  });
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -49,12 +64,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existing = prev.find(item => {
         const sameId = item.id === product.id;
         const sameFlavor = item.selectedFlavor === selectedFlavor;
-        
-        // Compare addons arrays
-        const itemAddons = item.selectedAddons || [];
-        const newAddons = selectedAddons || [];
-        const sameAddons = itemAddons.length === newAddons.length && 
-          itemAddons.sort().every((val, index) => val === newAddons.sort()[index]);
+        const sameAddons = sameSelection(item.selectedAddons, selectedAddons);
           
         return sameId && sameFlavor && sameAddons;
       });
@@ -63,10 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return prev.map(item => {
           const sameId = item.id === product.id;
           const sameFlavor = item.selectedFlavor === selectedFlavor;
-          const itemAddons = item.selectedAddons || [];
-          const newAddons = selectedAddons || [];
-          const sameAddons = itemAddons.length === newAddons.length && 
-            itemAddons.sort().every((val, index) => val === newAddons.sort()[index]);
+          const sameAddons = sameSelection(item.selectedAddons, selectedAddons);
 
           return (sameId && sameFlavor && sameAddons)
             ? { ...item, quantity: item.quantity + quantity }
@@ -75,6 +82,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...product, quantity, selectedFlavor, selectedAddons }];
     });
+    trackClientEvent('add_to_cart', {
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      hasFlavor: Boolean(selectedFlavor),
+      addons: selectedAddons?.length || 0,
+    });
+    trackMarketingEvent('AddToCart', {
+      content_ids: [product.id],
+      content_name: product.name,
+      currency: 'BRL',
+      value: product.price * quantity,
+      quantity,
+    });
     setIsCartOpen(true);
   };
 
@@ -82,11 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => prev.filter(item => {
       const sameId = item.id === productId;
       const sameFlavor = item.selectedFlavor === selectedFlavor;
-      
-      const itemAddons = item.selectedAddons || [];
-      const targetAddons = selectedAddons || [];
-      const sameAddons = itemAddons.length === targetAddons.length && 
-        itemAddons.sort().every((val, index) => val === targetAddons.sort()[index]);
+      const sameAddons = sameSelection(item.selectedAddons, selectedAddons);
         
       return !(sameId && sameFlavor && sameAddons);
     }));
@@ -100,11 +117,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => prev.map(item => {
       const sameId = item.id === productId;
       const sameFlavor = item.selectedFlavor === selectedFlavor;
-      
-      const itemAddons = item.selectedAddons || [];
-      const targetAddons = selectedAddons || [];
-      const sameAddons = itemAddons.length === targetAddons.length && 
-        itemAddons.sort().every((val, index) => val === targetAddons.sort()[index]);
+      const sameAddons = sameSelection(item.selectedAddons, selectedAddons);
         
       return (sameId && sameFlavor && sameAddons) ? { ...item, quantity } : item;
     }));
