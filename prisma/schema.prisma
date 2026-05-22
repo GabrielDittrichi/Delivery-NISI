@@ -39,6 +39,10 @@ model Product {
   description String
   price       Float
   imageUrl    String?
+  galleryImage1 String?
+  galleryImage2 String?
+  galleryImage3 String?
+  videoUrl    String?
   proteins    Float    @default(0)
   calories    Float    @default(0)
   weight      Float    @default(0) // em gramas

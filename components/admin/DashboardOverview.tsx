@@ -1,21 +1,34 @@
 'use client'
 
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
   Cell,
-  Legend
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import { DollarSign, ShoppingBag, Users, Eye, MousePointerClick } from 'lucide-react';
+import {
+  AlertCircle,
+  BadgePercent,
+  CalendarClock,
+  DollarSign,
+  MousePointerClick,
+  PackageOpen,
+  ShoppingBag,
+  Users,
+} from 'lucide-react';
+import { Product } from '@/lib/db';
+import { AdminBadge, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
+import type { Order } from './OrdersManager';
+import type { Customer } from './CustomersManager';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#16803C', '#0F5130', '#86EFAC', '#A7F3D0', '#D1FAE5'];
 
 export type DashboardMetrics = {
   revenue: { total: number; monthly: number };
@@ -33,178 +46,178 @@ export type DashboardMetrics = {
   };
 };
 
-export default function DashboardOverview({ metrics }: { metrics: DashboardMetrics | null | undefined }) {
+export default function DashboardOverview({
+  metrics,
+  products,
+  orders,
+  customers,
+  onNavigate,
+}: {
+  metrics: DashboardMetrics | null | undefined;
+  products: Product[];
+  orders: Order[];
+  customers: Customer[];
+  onNavigate: (tab: 'orders' | 'products' | 'coupons' | 'restaurant') => void;
+}) {
   if (!metrics) return <div className="p-4">Carregando métricas...</div>;
+
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter((order) => new Date(order.createdAt).toDateString() === today);
+  const todayRevenue = todayOrders
+    .filter((order) => order.status !== 'CANCELED')
+    .reduce((total, order) => total + order.total, 0);
+  const pendingOrders = orders.filter((order) => order.status === 'PENDING').length;
+  const activeProducts = products.filter((product) => product.isActive !== false).length;
+  const recurringCustomers = customers.filter((customer) => customer.ordersCount > 1).length;
+  const productsWithoutImage = products.filter((product) => !product.imageUrl).length;
+  const inactiveProducts = products.filter((product) => product.isActive === false).length;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Faturamento Total</p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">R$ {metrics.revenue.total.toFixed(2)}</h3>
-                    <p className="text-xs text-gray-400 mt-1">Mês atual: R$ {metrics.revenue.monthly.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-green-100 rounded-lg text-green-600">
-                    <DollarSign size={20} />
-                </div>
-            </div>
-        </div>
+      <AdminPageHeader
+        eyebrow="Painel"
+        title="Resumo da operacao"
+        description="Acompanhe pedidos, receita, clientes e pontos que precisam de atencao antes do atendimento ficar corrido."
+      />
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Total de Pedidos</p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">{metrics.orders}</h3>
-                </div>
-                <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700">
-                    <ShoppingBag size={20} />
-                </div>
-            </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Visitantes</p>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-1">{metrics.visits}</h3>
-                </div>
-                <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                    <Users size={20} />
-                </div>
-            </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Visualizações (Produtos)</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                        {metrics.topProducts.reduce((acc, curr) => acc + curr.views, 0)}
-                    </h3>
-                </div>
-                <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
-                    <Eye size={20} />
-                </div>
-            </div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <AdminStatCard label="Pedidos hoje" value={todayOrders.length} detail={`${pendingOrders} pendentes`} icon={ShoppingBag} />
+        <AdminStatCard label="Receita hoje" value={formatCurrency(todayRevenue)} detail={`Mes: ${formatCurrency(metrics.revenue.monthly)}`} icon={DollarSign} />
+        <AdminStatCard label="Produtos ativos" value={activeProducts} detail={`${products.length} cadastrados`} icon={PackageOpen} />
+        <AdminStatCard label="Clientes recorrentes" value={recurringCustomers} detail={`${customers.length} clientes`} icon={Users} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Faturamento Diário Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Faturamento (Últimos 7 dias)</h3>
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={metrics.dailyRevenue}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis 
-                            dataKey="date" 
-                            tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} 
-                            fontSize={12}
-                        />
-                        <YAxis fontSize={12} tickFormatter={(val) => `R$${val}`} />
-                        <Tooltip 
-                            formatter={(value) => [`R$ ${Number(value).toFixed(2)}`, 'Faturamento']}
-                            labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
-                        />
-                        <Bar dataKey="total" fill="#16a34a" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-
-        {/* Origem do Tráfego Pie Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Origem do Tráfego</h3>
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={metrics.trafficSources}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                        >
-                            {metrics.trafficSources.map((_entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                    </PieChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <div className="mb-4 flex items-center gap-2">
-          <MousePointerClick className="text-emerald-700" size={20} />
-          <h3 className="text-lg font-bold text-gray-800">Funil de Conversao</h3>
-        </div>
+      <AdminSection title="Acoes rapidas" description="Atalhos para as rotinas que mais movimentam o cardapio.">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-          <div className="rounded-lg border bg-emerald-50/50 p-4">
-            <p className="text-sm text-gray-500">Adicionou ao carrinho</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.addToCart}</p>
-          </div>
-          <div className="rounded-lg border bg-emerald-50/50 p-4">
-            <p className="text-sm text-gray-500">Iniciou checkout</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.checkoutStarted}</p>
-          </div>
-          <div className="rounded-lg border bg-emerald-50/50 p-4">
-            <p className="text-sm text-gray-500">Pedido criado</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.funnel.orderCreated}</p>
-          </div>
-          <div className="rounded-lg border bg-emerald-50/50 p-4">
-            <p className="text-sm text-gray-500">Conv. checkout</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{(metrics.funnel.checkoutConversion * 100).toFixed(0)}%</p>
-          </div>
+          <button onClick={() => onNavigate('orders')} className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-left transition-colors hover:bg-emerald-100">
+            <CalendarClock className="mb-3 text-emerald-700" size={20} />
+            <p className="font-semibold text-gray-950">Ver pedidos</p>
+            <p className="mt-1 text-sm text-gray-600">Priorize os pendentes.</p>
+          </button>
+          <button onClick={() => onNavigate('products')} className="rounded-lg border border-emerald-100 bg-white p-4 text-left transition-colors hover:bg-emerald-50">
+            <ShoppingBag className="mb-3 text-emerald-700" size={20} />
+            <p className="font-semibold text-gray-950">Novo produto</p>
+            <p className="mt-1 text-sm text-gray-600">Ajuste cardapio e destaques.</p>
+          </button>
+          <button onClick={() => onNavigate('coupons')} className="rounded-lg border border-emerald-100 bg-white p-4 text-left transition-colors hover:bg-emerald-50">
+            <BadgePercent className="mb-3 text-emerald-700" size={20} />
+            <p className="font-semibold text-gray-950">Criar cupom</p>
+            <p className="mt-1 text-sm text-gray-600">Configure regras de uso.</p>
+          </button>
+          <button onClick={() => onNavigate('restaurant')} className="rounded-lg border border-emerald-100 bg-white p-4 text-left transition-colors hover:bg-emerald-50">
+            <AlertCircle className="mb-3 text-emerald-700" size={20} />
+            <p className="font-semibold text-gray-950">Editar horarios</p>
+            <p className="mt-1 text-sm text-gray-600">Atualize o atendimento.</p>
+          </button>
         </div>
+      </AdminSection>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <AdminSection title="Faturamento dos ultimos 7 dias">
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={metrics.dailyRevenue}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                  fontSize={12}
+                />
+                <YAxis fontSize={12} tickFormatter={(val) => `R$${val}`} />
+                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Faturamento']} labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')} />
+                <Bar dataKey="total" fill="#16803C" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </AdminSection>
+
+        <AdminSection title="Origem dos acessos">
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={metrics.trafficSources} cx="50%" cy="50%" innerRadius={62} outerRadius={86} paddingAngle={5} dataKey="value">
+                  {metrics.trafficSources.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </AdminSection>
       </div>
 
-      {/* Top Products Table */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Produtos Mais Acessados</h3>
-          <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-gray-700 uppercase font-medium">
-                      <tr>
-                          <th className="px-4 py-3">Produto</th>
-                          <th className="px-4 py-3 text-right">Visualizações</th>
-                          <th className="px-4 py-3">Popularidade</th>
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                      {metrics.topProducts.map((product, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-900">{product.name}</td>
-                              <td className="px-4 py-3 text-right">{product.views}</td>
-                              <td className="px-4 py-3">
-                                  <div className="w-full bg-gray-200 rounded-full h-2 max-w-[100px]">
-                                      <div 
-                                          className="bg-emerald-700 h-2 rounded-full" 
-                                          style={{ width: `${Math.min(100, (product.views / Math.max(...metrics.topProducts.map((p) => p.views), 1)) * 100)}%` }}
-                                      ></div>
-                                  </div>
-                              </td>
-                          </tr>
-                      ))}
-                      {metrics.topProducts.length === 0 && (
-                          <tr>
-                              <td colSpan={3} className="px-4 py-8 text-center text-gray-400">
-                                  Nenhum dado disponível ainda.
-                              </td>
-                          </tr>
-                      )}
-                  </tbody>
-              </table>
+      <AdminSection title="Funil de conversao" description="Leitura rapida do caminho ate o pedido.">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <MousePointerClick className="mb-2 text-emerald-700" size={18} />
+            <p className="text-sm text-gray-500">Carrinho</p>
+            <p className="mt-1 text-2xl font-bold text-gray-950">{metrics.funnel.addToCart}</p>
           </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-gray-500">Checkout</p>
+            <p className="mt-1 text-2xl font-bold text-gray-950">{metrics.funnel.checkoutStarted}</p>
+          </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-gray-500">Pedidos</p>
+            <p className="mt-1 text-2xl font-bold text-gray-950">{metrics.funnel.orderCreated}</p>
+          </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
+            <p className="text-sm text-gray-500">Conv. checkout</p>
+            <p className="mt-1 text-2xl font-bold text-gray-950">{(metrics.funnel.checkoutConversion * 100).toFixed(0)}%</p>
+          </div>
+        </div>
+      </AdminSection>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <AdminSection title="Produtos mais acessados">
+          <div className="space-y-3">
+            {metrics.topProducts.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-500">Nenhum dado disponivel ainda.</p>
+            ) : (
+              metrics.topProducts.map((product) => {
+                const maxViews = Math.max(...metrics.topProducts.map((item) => item.views), 1);
+                return (
+                  <div key={product.name} className="rounded-lg border border-gray-100 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold text-gray-950">{product.name}</p>
+                      <AdminBadge>{product.views} views</AdminBadge>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-gray-100">
+                      <div className="h-2 rounded-full bg-emerald-700" style={{ width: `${Math.min(100, (product.views / maxViews) * 100)}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </AdminSection>
+
+        <AdminSection title="Alertas operacionais" description="Itens que merecem revisao antes de divulgar o cardapio.">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
+              <span className="text-sm font-medium text-gray-700">Pedidos pendentes</span>
+              <AdminBadge tone={pendingOrders > 0 ? 'amber' : 'green'}>{pendingOrders}</AdminBadge>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-white p-3">
+              <span className="text-sm font-medium text-gray-700">Produtos sem foto</span>
+              <AdminBadge tone={productsWithoutImage > 0 ? 'amber' : 'green'}>{productsWithoutImage}</AdminBadge>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-white p-3">
+              <span className="text-sm font-medium text-gray-700">Produtos inativos</span>
+              <AdminBadge tone={inactiveProducts > 0 ? 'gray' : 'green'}>{inactiveProducts}</AdminBadge>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-white p-3">
+              <span className="text-sm font-medium text-gray-700">Visitantes registrados</span>
+              <AdminBadge>{metrics.visits}</AdminBadge>
+            </div>
+          </div>
+        </AdminSection>
       </div>
     </div>
   );

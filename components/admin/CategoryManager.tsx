@@ -1,10 +1,12 @@
 'use client'
 import { Category } from '@/lib/db';
+import { Product } from '@/lib/db';
 import { addCategory, deleteCategory, moveCategory } from '@/lib/actions';
 import { useState } from 'react';
-import { Trash2, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, ChevronUp, ChevronDown, ListTree } from 'lucide-react';
+import { AdminBadge, AdminEmptyState, AdminPageHeader, AdminSection } from './AdminPrimitives';
 
-export default function CategoryManager({ categories }: { categories: Category[] }) {
+export default function CategoryManager({ categories, products }: { categories: Category[]; products: Product[] }) {
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,62 +30,67 @@ export default function CategoryManager({ categories }: { categories: Category[]
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <h2 className="text-lg font-bold mb-4 text-gray-800">Gerenciar Categorias</h2>
+    <div>
+      <AdminPageHeader
+        eyebrow="Organizacao"
+        title="Categorias"
+        description="Organize o cardapio na mesma ordem que o cliente vai navegar no site."
+      />
       
-      <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2 mb-6">
-        <input
-            type="text"
-            placeholder="Nova Categoria"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="flex-1 rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-        />
-        <button 
-            type="submit" 
-            disabled={loading || !newCategory.trim()}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-            <Plus size={18} /> Adicionar
-        </button>
-      </form>
+      <AdminSection title="Nova categoria" description="Use nomes curtos para facilitar a leitura no mobile.">
+        <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row">
+          <input
+              type="text"
+              placeholder="Nova Categoria"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="flex-1 rounded-lg border border-emerald-100 p-3 text-gray-900 outline-none focus:ring-2 focus:ring-emerald-600"
+          />
+          <button
+              type="submit"
+              disabled={loading || !newCategory.trim()}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+              <Plus size={18} /> Adicionar
+          </button>
+        </form>
+      </AdminSection>
 
-      <ul className="space-y-2">
-        {categories.map((cat, index) => (
-            <li key={cat.id} className="flex items-center justify-between p-3 border rounded-md bg-gray-50">
-                <span className="font-medium text-gray-800">{cat.name}</span>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => handleMove(cat.id, 'up')}
-                        disabled={index === 0}
-                        className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-30 hover:bg-gray-200 rounded-full transition-colors"
-                        title="Mover para cima"
-                    >
+      <div className="mt-6">
+        <AdminSection title="Ordem do cardapio">
+          {categories.length === 0 ? (
+            <AdminEmptyState icon={ListTree} title="Nenhuma categoria cadastrada" description="Crie a primeira categoria para organizar os produtos do cardapio." />
+          ) : (
+            <ul className="space-y-3">
+              {categories.map((cat, index) => {
+                const productCount = products.filter((product) => product.categoryId === cat.id).length;
+                return (
+                  <li key={cat.id} className="flex flex-col gap-3 rounded-lg border border-emerald-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-gray-950">{cat.name}</span>
+                        <AdminBadge tone={productCount > 0 ? 'green' : 'gray'}>{productCount} produtos</AdminBadge>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">Posicao {index + 1} no cardapio.</p>
+                    </div>
+                    <div className="flex items-center gap-1 self-end sm:self-auto">
+                      <button onClick={() => handleMove(cat.id, 'up')} disabled={index === 0} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title="Mover para cima">
                         <ChevronUp size={20} />
-                    </button>
-                    <button
-                        onClick={() => handleMove(cat.id, 'down')}
-                        disabled={index === categories.length - 1}
-                        className="p-1.5 text-gray-500 hover:text-gray-700 disabled:opacity-30 hover:bg-gray-200 rounded-full transition-colors"
-                        title="Mover para baixo"
-                    >
+                      </button>
+                      <button onClick={() => handleMove(cat.id, 'down')} disabled={index === categories.length - 1} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title="Mover para baixo">
                         <ChevronDown size={20} />
-                    </button>
-                    <div className="w-px h-6 bg-gray-300 mx-2"></div>
-                    <button 
-                        onClick={() => handleDelete(cat.id)}
-                        className="text-emerald-700 hover:text-emerald-900 p-2 hover:bg-emerald-50 rounded-full transition-colors"
-                        title="Excluir"
-                    >
+                      </button>
+                      <button onClick={() => handleDelete(cat.id)} className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900" title="Excluir">
                         <Trash2 size={18} />
-                    </button>
-                </div>
-            </li>
-        ))}
-        {categories.length === 0 && (
-            <p className="text-gray-500 text-center py-4">Nenhuma categoria cadastrada.</p>
-        )}
-      </ul>
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </AdminSection>
+      </div>
     </div>
   );
 }

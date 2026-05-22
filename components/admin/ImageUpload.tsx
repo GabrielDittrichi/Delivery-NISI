@@ -2,7 +2,15 @@
 import { useState } from 'react';
 import { Copy, Check, Image as ImageIcon } from 'lucide-react';
 
-export default function ImageUpload({ onUploadComplete }: { onUploadComplete?: (url: string) => void }) {
+export default function ImageUpload({
+  onUploadComplete,
+  accept = 'image/*',
+  title = 'Upload de Imagem do Produto',
+}: {
+  onUploadComplete?: (url: string) => void;
+  accept?: string;
+  title?: string;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState('');
@@ -63,14 +71,14 @@ export default function ImageUpload({ onUploadComplete }: { onUploadComplete?: (
     <div className={onUploadComplete ? "bg-gray-50 p-4 rounded-lg border" : "bg-white p-6 rounded-lg shadow-sm"}>
       <h2 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
         <ImageIcon size={18} />
-        {onUploadComplete ? "Upload de Imagem do Produto" : "Upload de Imagens (R2)"}
+        {onUploadComplete ? title : "Upload de Imagens (R2)"}
       </h2>
 
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
             <input 
                 type="file" 
-                accept="image/*"
+                accept={accept}
                 onChange={handleFileChange}
                 className="w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
             />

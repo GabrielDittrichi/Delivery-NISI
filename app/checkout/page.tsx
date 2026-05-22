@@ -14,6 +14,15 @@ type DeliveryMethod = 'DELIVERY' | 'PICKUP';
 
 import { createOrder } from '@/lib/analytics';
 
+const inputClass = "w-full rounded-lg border border-emerald-100 bg-white px-4 py-3 text-sm text-gray-950 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
+const readonlyInputClass = `${inputClass} bg-emerald-50/40 text-gray-700`;
+const sectionClass = "overflow-hidden rounded-lg border border-emerald-100 bg-white p-5 shadow-[0_18px_60px_rgba(16,128,60,0.08)]";
+const optionClass = "rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/70 hover:shadow-sm";
+
+function money(value: number) {
+  return `R$ ${value.toFixed(2).replace('.', ',')}`;
+}
+
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart();
   const router = useRouter();
@@ -286,40 +295,60 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 
   if (items.length === 0) {
       return (
-          <div className="min-h-screen flex flex-col items-center justify-center p-4">
-              <p className="text-gray-600 mb-4">Seu carrinho está vazio.</p>
-              <Link href="/" className="font-medium hover:underline" style={{ color: 'var(--brand)' }}>
+          <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fbf8] p-4 text-center">
+              <div className="rounded-lg border border-emerald-100 bg-white p-8 shadow-sm">
+              <p className="mb-4 text-gray-600">Seu carrinho está vazio.</p>
+              <Link href="/" className="inline-flex rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white transition-colors hover:bg-emerald-800">
                   Voltar para o cardápio
               </Link>
+              </div>
           </div>
       )
   }
 
+  const finalTotal = Math.max(0, cartTotal - discount);
+  const checkoutSteps = [
+    { label: 'Dados', icon: User },
+    { label: deliveryMethod === 'DELIVERY' ? 'Entrega' : 'Retirada', icon: deliveryMethod === 'DELIVERY' ? Bike : Store },
+    { label: 'Pagamento', icon: CreditCard },
+    { label: 'Resumo', icon: ClipboardCheck },
+  ];
+  const paymentOptions = [
+    { id: 'PIX' as PaymentMethod, label: 'PIX', icon: QrCode },
+    { id: 'MONEY' as PaymentMethod, label: 'Dinheiro', icon: Banknote },
+    { id: 'CREDIT' as PaymentMethod, label: 'Credito', icon: CreditCard },
+    { id: 'DEBIT' as PaymentMethod, label: 'Debito', icon: CreditCard },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#f8fbf8] pb-24">
-      <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
-         <div className="container mx-auto max-w-2xl flex items-center">
-             <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(187,247,208,0.45),transparent_32%),#f8fbf8] pb-28">
+      <div className="sticky top-0 z-10 border-b border-emerald-100 bg-white/90 p-4 shadow-sm backdrop-blur">
+         <div className="container mx-auto flex max-w-3xl items-center">
+             <Link href="/" className="-ml-2 rounded-lg p-2 transition-colors hover:bg-emerald-50" aria-label="Voltar">
                  <ArrowLeft size={24} style={{ color: 'var(--brand)' }} />
              </Link>
-             <h1 className="ml-2 font-medium text-lg text-gray-800">Finalizar no NISI</h1>
+             <div className="ml-2">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Checkout seguro</p>
+              <h1 className="text-lg font-bold text-gray-950">Finalizar no NISI</h1>
+             </div>
          </div>
       </div>
 
-      <div className="container mx-auto max-w-2xl p-4 space-y-6">
-        <div className="rounded-lg border bg-white p-4 shadow-sm" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-sm font-semibold text-gray-950">Vamos preparar seu pedido no NISI</p>
-          <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px] font-medium text-gray-600">
-            {[
-              { label: 'Dados', icon: User },
-              { label: 'Entrega', icon: deliveryMethod === 'DELIVERY' ? Bike : Store },
-              { label: 'Pagamento', icon: CreditCard },
-              { label: 'Resumo', icon: ClipboardCheck },
-            ].map((step) => {
+      <div className="container mx-auto max-w-3xl space-y-6 p-4">
+        <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-[0_18px_60px_rgba(16,128,60,0.08)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-950">Vamos preparar seu pedido no NISI</p>
+              <p className="mt-1 text-sm text-gray-500">Complete os dados e envie direto para o WhatsApp.</p>
+            </div>
+            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">{money(finalTotal)}</span>
+          </div>
+          <div className="mt-4 grid grid-cols-4 gap-2 text-center text-[11px] font-semibold text-gray-600">
+            {checkoutSteps.map((step, index) => {
               const Icon = step.icon;
               return (
                 <div key={step.label} className="flex flex-col items-center gap-1">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${index === 0 ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800'}`}>
                     <Icon size={15} />
                   </span>
                   {step.label}
@@ -335,9 +364,10 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                className={`${sectionClass} space-y-4`}
             >
-                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h2 className="flex items-center gap-2 font-bold text-gray-950">
+                    <User size={18} className="text-emerald-700" />
                     Dados Pessoais
                 </h2>
                 <div className="space-y-3">
@@ -346,7 +376,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                        name="name"
 	                        placeholder="Nome Completo"
 	                        required
-	                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                        className={inputClass}
 	                        value={formData.name}
 	                        onChange={handleInputChange}
 	                    />
@@ -355,7 +385,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                        name="phone"
 	                        placeholder="Telefone / WhatsApp"
 	                        required
-	                        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                        className={inputClass}
 	                        value={formData.phone}
 	                        onChange={handleInputChange}
 	                    />
@@ -367,9 +397,10 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                className={`${sectionClass} space-y-4`}
             >
-                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h2 className="flex items-center gap-2 font-bold text-gray-950">
+                    {deliveryMethod === 'DELIVERY' ? <Bike size={18} className="text-emerald-700" /> : <Store size={18} className="text-emerald-700" />}
                     Tipo de Entrega
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
@@ -377,7 +408,8 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                        type="button"
 	                        onClick={() => setDeliveryMethod('DELIVERY')}
 	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            optionClass,
+                              "flex flex-col items-center gap-2",
 	                            deliveryMethod === 'DELIVERY' ? "hover:bg-gray-50" : "hover:bg-gray-50"
 	                        )}
 	                        style={deliveryMethod === 'DELIVERY' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
@@ -389,7 +421,8 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                        type="button"
 	                        onClick={() => setDeliveryMethod('PICKUP')}
 	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
+	                            optionClass,
+                              "flex flex-col items-center gap-2",
 	                            deliveryMethod === 'PICKUP' ? "hover:bg-gray-50" : "hover:bg-gray-50"
 	                        )}
 	                        style={deliveryMethod === 'PICKUP' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
@@ -408,10 +441,10 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="bg-white p-6 rounded-lg shadow-sm border space-y-4 overflow-hidden"
+                        className={`${sectionClass} space-y-4`}
                     >
-                        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                            <MapPin size={20} className="text-gray-500" />
+                        <h2 className="flex items-center gap-2 font-bold text-gray-950">
+                            <MapPin size={20} className="text-emerald-700" />
                             Endereço de Entrega
                         </h2>
                         <div className="space-y-3">
@@ -421,13 +454,13 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                    name="cep"
 	                                    placeholder="CEP"
 	                                    required={deliveryMethod === 'DELIVERY'}
-	                                    className={clsx("w-32 border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]", cepError && "border-emerald-600")}
+	                                    className={clsx("w-36", inputClass, cepError && "border-emerald-600")}
 	                                    value={formData.cep}
 	                                    onChange={handleInputChange}
 	                                    onBlur={handleCepBlur}
 	                                    maxLength={9}
 	                                />
-                                {cepLoading && <span className="text-sm text-gray-500 self-center">Buscando...</span>}
+                                {cepLoading && <span className="self-center rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">Buscando...</span>}
                             </div>
                             {cepError && <p className="text-sm text-emerald-700">{cepError}</p>}
                             
@@ -437,7 +470,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                    name="street"
 	                                    placeholder="Rua"
 	                                    required={deliveryMethod === 'DELIVERY'}
-	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    className={readonlyInputClass}
 	                                    value={formData.street}
 	                                    onChange={handleInputChange}
 	                                    readOnly
@@ -447,7 +480,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                    name="number"
 	                                    placeholder="Número"
 	                                    required={deliveryMethod === 'DELIVERY'}
-	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                                    className={inputClass}
 	                                    value={formData.number}
 	                                    onChange={handleInputChange}
 	                                />
@@ -457,7 +490,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                type="text" 
 	                                name="complement"
 	                                placeholder="Complemento (Opcional)"
-	                                className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)]"
+	                                className={inputClass}
 	                                value={formData.complement}
 	                                onChange={handleInputChange}
 	                            />
@@ -468,7 +501,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                    name="neighborhood"
 	                                    placeholder="Bairro"
 	                                    required={deliveryMethod === 'DELIVERY'}
-	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    className={readonlyInputClass}
 	                                    value={formData.neighborhood}
 	                                    onChange={handleInputChange}
 	                                    readOnly
@@ -478,7 +511,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                                    name="city"
 	                                    placeholder="Cidade"
 	                                    required={deliveryMethod === 'DELIVERY'}
-	                                    className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-[var(--brand)] bg-gray-50"
+	                                    className={readonlyInputClass}
 	                                    value={formData.city}
 	                                    onChange={handleInputChange}
 	                                    readOnly
@@ -492,13 +525,13 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                        className={`${sectionClass} space-y-4`}
                     >
-                        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                            <Store size={20} className="text-gray-500" />
+                        <h2 className="flex items-center gap-2 font-bold text-gray-950">
+                            <Store size={20} className="text-emerald-700" />
                             Local de Retirada
                         </h2>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
                             <p className="font-medium text-gray-900">Endereço para retirada:</p>
                             <p className="text-gray-600 mt-1">Av. Abílio Machado, 1.928 - sala 01 - Alípio de Melo</p>
                         </div>
@@ -511,58 +544,32 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                className={`${sectionClass} space-y-4`}
             >
-                <h2 className="font-semibold text-gray-900">Forma de Pagamento</h2>
+                <h2 className="flex items-center gap-2 font-bold text-gray-950">
+                  <CreditCard size={18} className="text-emerald-700" />
+                  Forma de Pagamento
+                </h2>
                 <div className="grid grid-cols-2 gap-3">
-	                    <button
-	                        type="button"
-	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'PIX' }))}
-	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-	                            formData.paymentMethod === 'PIX' ? "hover:bg-gray-50" : "hover:bg-gray-50"
-	                        )}
-	                        style={formData.paymentMethod === 'PIX' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
-	                    >
-                        <QrCode size={24} />
-                        <span className="text-sm font-medium">PIX</span>
-                    </button>
-	                    <button
-	                        type="button"
-	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'MONEY' }))}
-	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-	                            formData.paymentMethod === 'MONEY' ? "hover:bg-gray-50" : "hover:bg-gray-50"
-	                        )}
-	                        style={formData.paymentMethod === 'MONEY' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
-	                    >
-                        <Banknote size={24} />
-                        <span className="text-sm font-medium">Dinheiro</span>
-                    </button>
-	                    <button
-	                        type="button"
-	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CREDIT' }))}
-	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-	                            formData.paymentMethod === 'CREDIT' ? "hover:bg-gray-50" : "hover:bg-gray-50"
-	                        )}
-	                        style={formData.paymentMethod === 'CREDIT' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
-	                    >
-                        <CreditCard size={24} />
-                        <span className="text-sm font-medium">Crédito</span>
-                    </button>
-	                    <button
-	                        type="button"
-	                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'DEBIT' }))}
-	                        className={clsx(
-	                            "p-4 border rounded-lg flex flex-col items-center gap-2 transition-colors",
-	                            formData.paymentMethod === 'DEBIT' ? "hover:bg-gray-50" : "hover:bg-gray-50"
-	                        )}
-	                        style={formData.paymentMethod === 'DEBIT' ? { borderColor: 'var(--brand)', backgroundColor: 'color-mix(in srgb, var(--brand) 10%, white)', color: 'var(--brand)' } : undefined}
-	                    >
-                        <CreditCard size={24} />
-                        <span className="text-sm font-medium">Débito</span>
-                    </button>
+                  {paymentOptions.map((option) => {
+                    const Icon = option.icon;
+                    const selected = formData.paymentMethod === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: option.id }))}
+                        className={clsx(
+                          optionClass,
+                          "flex flex-col items-center gap-2",
+                          selected ? "border-emerald-700 bg-emerald-50 text-emerald-800 shadow-sm" : "border-emerald-100 bg-white text-gray-700"
+                        )}
+                      >
+                        <Icon size={24} />
+                        <span className="text-sm font-semibold">{option.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
             </motion.div>
 
@@ -571,12 +578,12 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                className={`${sectionClass} space-y-4`}
             >
-	                 <h2 className="font-semibold text-gray-900">Observações do pedido</h2>
+	                 <h2 className="font-bold text-gray-950">Observações do pedido</h2>
 	                 <textarea 
 	                    name="observations"
-	                    className="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-[var(--brand)] focus:outline-none resize-none h-24"
+	                    className={`${inputClass} h-24 resize-none`}
 	                    placeholder="Ex: menos gelo, retirar algum ingrediente, ponto de referencia..."
 	                    value={formData.observations}
 	                    onChange={handleInputChange}
@@ -588,13 +595,41 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+                className={`${sectionClass} space-y-4`}
             >
-                <h2 className="font-semibold text-gray-900 pb-2">Resumo do pedido</h2>
+                <h2 className="flex items-center gap-2 pb-1 font-bold text-gray-950">
+                  <ClipboardCheck size={18} className="text-emerald-700" />
+                  Resumo do pedido
+                </h2>
+                <div className="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
+                  {items.map((item) => {
+                    const addonsTotal =
+                      item.selectedAddons?.reduce((acc, id) => acc + (item.addons?.find(a => a.id === id)?.price || 0), 0) || 0;
+                    const lineTotal = (item.price + addonsTotal) * item.quantity;
+                    const flavorName = item.selectedFlavor
+                      ? (item.flavors?.find(f => f.id === item.selectedFlavor)?.name || item.selectedFlavor)
+                      : '';
+                    return (
+                      <div key={`${item.id}-${item.selectedFlavor || 'sem-sabor'}-${item.selectedAddons?.join('-') || 'sem-adicional'}`} className="flex items-start justify-between gap-3 rounded-lg bg-white p-3 shadow-sm">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-950">{item.quantity}x {item.name}</p>
+                          {flavorName && <p className="mt-1 text-xs text-gray-500">Sabor: {flavorName}</p>}
+                          {item.selectedAddons && item.selectedAddons.length > 0 && (
+                            <p className="mt-1 text-xs text-emerald-700">
+                              {item.selectedAddons.map(id => item.addons?.find(a => a.id === id)?.name || id).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-sm font-bold text-emerald-800">{money(lineTotal)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="space-y-2">
 	                <div className="flex justify-between text-gray-600">
 	                    <span>Subtotal</span>
-	                    <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
+	                    <span>{money(cartTotal)}</span>
 	                </div>
                 {deliveryMethod === 'DELIVERY' && (
                     <div className="flex justify-between text-gray-600 items-center">
@@ -605,16 +640,16 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 	                {discount > 0 && (
 	                    <div className="flex justify-between" style={{ color: 'var(--brand)' }}>
 	                        <span>Desconto</span>
-	                        <span>- R$ {discount.toFixed(2).replace('.', ',')}</span>
+	                        <span>- {money(discount)}</span>
 		                    </div>
 		                )}
 	                <div className="flex justify-between font-bold text-lg text-gray-900 pt-2 border-t">
 	                    <span>Total</span>
-	                    <span>R$ {Math.max(0, cartTotal - discount).toFixed(2).replace('.', ',')}</span>
+	                    <span>{money(finalTotal)}</span>
 	                </div>
                 </div>
 
-                <div className="rounded-lg border bg-emerald-50/50 p-3" style={{ borderColor: 'var(--border)' }}>
+                <div className="rounded-lg border border-emerald-100 bg-white p-3">
                   <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
                     <Banknote size={16} className="text-emerald-700" />
                     Cupom NISI
@@ -623,7 +658,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                     <input
                       type="text"
                       placeholder="Código"
-                      className="min-w-0 flex-1 rounded-lg border bg-white p-3 uppercase outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                      className={`${inputClass} min-w-0 flex-1 uppercase`}
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                       disabled={!!appliedCoupon}
@@ -646,7 +681,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                         type="button"
                         onClick={handleApplyCoupon}
                         disabled={couponLoading || !couponCode}
-                        className="rounded-lg bg-gray-900 px-5 font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+                        className="rounded-lg bg-emerald-700 px-5 font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
                       >
                         {couponLoading ? '...' : 'Aplicar'}
                       </button>
@@ -669,10 +704,9 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                 transition={{ delay: 0.6 }}
 	                type="submit"
 	                disabled={isSubmitting}
-	                className="w-full text-white font-bold py-4 rounded-lg shadow-lg active:transform active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-	                style={{ backgroundColor: 'var(--brand)' }}
+	                className="w-full rounded-lg bg-emerald-700 py-4 font-bold text-white shadow-[0_16px_40px_rgba(22,128,60,0.24)] transition-all active:scale-[0.98] hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
 	            >
-	                {isSubmitting ? 'Processando...' : 'Enviar pedido'}
+	                {isSubmitting ? 'Processando...' : `Enviar pedido - ${money(finalTotal)}`}
             </motion.button>
         </form>
       </div>

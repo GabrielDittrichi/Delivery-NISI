@@ -3,6 +3,7 @@ import { Restaurant } from '@/lib/db';
 import { updateRestaurant } from '@/lib/actions';
 import { useState } from 'react';
 import ImageUpload from '@/components/ImageUpload';
+import { AdminPageHeader, AdminSection } from './AdminPrimitives';
 
 export default function RestaurantForm({ restaurant }: { restaurant: Restaurant }) {
   const [formData, setFormData] = useState(restaurant);
@@ -17,9 +18,14 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <h2 className="text-lg font-bold mb-4 text-gray-800">Informações do Restaurante</h2>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Configuracoes"
+        title="Restaurante"
+        description="Controle identidade, atendimento, midia e informacoes exibidas no cardapio."
+      />
       <form onSubmit={handleSubmit} className="space-y-4">
+        <AdminSection title="Identidade" description="Essas informacoes aparecem no topo do site e no cardapio presencial.">
         <div>
           <label className="block text-sm font-medium text-gray-700">Nome</label>
           <input
@@ -38,6 +44,9 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             rows={3}
           />
         </div>
+        </AdminSection>
+
+        <AdminSection title="Atendimento" description="Dados usados para orientar entrega, retirada e contato.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">WhatsApp</label>
@@ -78,6 +87,9 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             rows={3}
           />
         </div>
+        </AdminSection>
+
+        <AdminSection title="Midia" description="Atualize logo e banner mantendo imagens claras e bem enquadradas.">
          <div>
           <ImageUpload
             label="Banner do Restaurante"
@@ -96,6 +108,9 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
             aspect={1}
           />
         </div>
+        </AdminSection>
+
+        <AdminSection title="Operacao" description="Ajustes usados nos resumos e mensagens do cardapio.">
         <div>
           <label className="block text-sm font-medium text-gray-700">Cor Primária</label>
           <div className="flex items-center gap-2">
@@ -137,12 +152,13 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
                 onChange={(e) => setFormData({ ...formData, minOrder: Number(e.target.value) })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
               />
-            </div>
+             </div>
          </div>
+        </AdminSection>
         <button
           type="submit"
           disabled={loading}
-          className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800 disabled:opacity-50 font-medium"
+          className="rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
         >
           {loading ? 'Salvando...' : 'Salvar Alterações'}
         </button>

@@ -14,6 +14,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   }
 
   const { primaryColor } = data.restaurant;
+  const relatedProducts = data.products
+    .filter((item) => item.categoryId === product.categoryId && item.id !== product.id && item.isActive !== false)
+    .slice(0, 3);
 
-  return <ProductDetails product={product} primaryColor={primaryColor} />;
+  return <ProductDetails product={product} primaryColor={primaryColor} relatedProducts={relatedProducts} />;
 }

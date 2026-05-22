@@ -28,6 +28,18 @@ async function main() {
     });
   }
 
+  const obsoleteProductIds = ['shake-sem-borda', 'shake-com-borda', 'empada-grande', 'empada-pequena'];
+  for (const id of obsoleteProductIds) {
+    try {
+      await prisma.product.delete({ where: { id } });
+    } catch {
+      await prisma.product.updateMany({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+  }
+
   for (const product of sampleProducts) {
     await prisma.product.upsert({
       where: { slug: product.slug },
@@ -35,7 +47,6 @@ async function main() {
         name: product.name,
         description: product.description,
         price: product.price,
-        imageUrl: product.imageUrl,
         proteins: product.proteins,
         calories: product.calories,
         weight: product.weight,
@@ -61,6 +72,10 @@ async function main() {
         description: product.description,
         price: product.price,
         imageUrl: product.imageUrl,
+        galleryImage1: product.galleryImage1 || null,
+        galleryImage2: product.galleryImage2 || null,
+        galleryImage3: product.galleryImage3 || null,
+        videoUrl: product.videoUrl || null,
         proteins: product.proteins,
         calories: product.calories,
         weight: product.weight,

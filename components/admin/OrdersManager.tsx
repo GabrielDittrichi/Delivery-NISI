@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { updateOrderStatus } from '@/lib/actions';
-import { ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Truck, Package, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Truck, Package, Search, Banknote, Bike } from 'lucide-react';
 import clsx from 'clsx';
+import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
 
 // Define types based on Prisma schema since we don't have direct access to generated types in client component easily without importing from @prisma/client
 interface OrderItem {
@@ -40,6 +41,9 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterDelivery, setFilterDelivery] = useState<string>('ALL');
+  const [filterPayment, setFilterPayment] = useState<string>('ALL');
+  const [filterDate, setFilterDate] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -60,12 +64,22 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'ALL' || order.status === filterStatus;
+    const matchesDelivery = filterDelivery === 'ALL' || order.deliveryMethod === filterDelivery;
+    const matchesPayment = filterPayment === 'ALL' || order.paymentMethod === filterPayment;
+    const matchesDate =
+      filterDate === 'ALL' ||
+      (filterDate === 'TODAY' && new Date(order.createdAt).toDateString() === new Date().toDateString());
     const matchesSearch = 
       order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerPhone.includes(searchTerm);
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesDelivery && matchesPayment && matchesDate && matchesSearch;
   });
+
+  const pendingOrders = orders.filter((order) => order.status === 'PENDING').length;
+  const deliveredOrders = orders.filter((order) => order.status === 'DELIVERED').length;
+  const deliveryOrders = orders.filter((order) => order.deliveryMethod !== 'PICKUP').length;
+  const totalRevenue = orders.filter((order) => order.status !== 'CANCELED').reduce((total, order) => total + order.total, 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -107,13 +121,21 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <Package className="text-emerald-700" />
-          Gerenciar Pedidos
-        </h2>
+      <AdminPageHeader
+        eyebrow="Atendimento"
+        title="Pedidos"
+        description="Filtre, acompanhe e atualize cada pedido sem perder o contexto do cliente."
+      />
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <AdminStatCard label="Pendentes" value={pendingOrders} detail="aguardando confirmacao" icon={Clock} />
+        <AdminStatCard label="Entregues" value={deliveredOrders} detail="finalizados" icon={CheckCircle} />
+        <AdminStatCard label="Entregas" value={deliveryOrders} detail="versus retiradas" icon={Bike} />
+        <AdminStatCard label="Receita" value={formatCurrency(totalRevenue)} detail="sem cancelados" icon={Banknote} />
+      </div>
+
+      <AdminSection title="Lista de pedidos" description="Use os filtros para operar o atendimento com mais rapidez.">
+        <div className="mb-6 flex flex-col gap-3 xl:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
@@ -124,19 +146,46 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 xl:pb-0">
+            {['ALL', 'TODAY'].map((date) => (
+              <button
+                key={date}
+                onClick={() => setFilterDate(date)}
+                className={clsx("px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors", filterDate === date ? "bg-emerald-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
+              >
+                {date === 'ALL' ? 'Todas datas' : 'Hoje'}
+              </button>
+            ))}
             {['ALL', 'PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELED'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
                 className={clsx(
                   "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
-                  filterStatus === status 
-                    ? "bg-gray-900 text-white" 
+                  filterStatus === status
+                    ? "bg-emerald-700 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
                 {status === 'ALL' ? 'Todos' : getStatusLabel(status)}
+              </button>
+            ))}
+            {['ALL', 'DELIVERY', 'PICKUP'].map((method) => (
+              <button
+                key={method}
+                onClick={() => setFilterDelivery(method)}
+                className={clsx("px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors", filterDelivery === method ? "bg-emerald-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
+              >
+                {method === 'ALL' ? 'Todos tipos' : getDeliveryMethodLabel(method)}
+              </button>
+            ))}
+            {['ALL', 'PIX', 'MONEY', 'CREDIT', 'DEBIT'].map((payment) => (
+              <button
+                key={payment}
+                onClick={() => setFilterPayment(payment)}
+                className={clsx("px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors", filterPayment === payment ? "bg-emerald-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
+              >
+                {payment === 'ALL' ? 'Pagamentos' : payment}
               </button>
             ))}
           </div>
@@ -144,9 +193,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
 
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              Nenhum pedido encontrado.
-            </div>
+            <AdminEmptyState icon={Package} title="Nenhum pedido encontrado" description="Ajuste filtros ou aguarde novos pedidos do checkout." />
           ) : (
             filteredOrders.map((order) => (
               <div key={order.id} className="border rounded-lg overflow-hidden transition-all hover:shadow-md">
@@ -274,7 +321,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
             ))
           )}
         </div>
-      </div>
+      </AdminSection>
     </div>
   );
 }

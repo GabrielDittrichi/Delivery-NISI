@@ -1,15 +1,19 @@
 'use client'
 import { Category, Product } from '@/lib/db';
 import { addProduct, deleteProduct, updateProduct } from '@/lib/actions';
-import { useState } from 'react';
-import { Trash2, Plus, Edit2, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Trash2, Plus, Edit2, X, ImageOff, Search, ShoppingBag, Sparkles, ToggleLeft } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import Image from 'next/image';
+import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
 
 export default function ProductManager({ categories, products }: { categories: Category[], products: Product[] }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const initialFormState = {
     categoryId: categories[0]?.id || '',
@@ -17,6 +21,10 @@ export default function ProductManager({ categories, products }: { categories: C
     description: '',
     price: 0,
     imageUrl: '',
+    galleryImage1: '',
+    galleryImage2: '',
+    galleryImage3: '',
+    videoUrl: '',
     proteins: 0,
     calories: 0,
     weight: 0,
@@ -36,6 +44,26 @@ export default function ProductManager({ categories, products }: { categories: C
   const [newAddon, setNewAddon] = useState('');
   const [newAddonPrice, setNewAddonPrice] = useState('');
 
+  const visibleProducts = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(term) || product.description.toLowerCase().includes(term);
+      const matchesCategory = categoryFilter === 'ALL' || product.categoryId === categoryFilter;
+      const matchesStatus =
+        statusFilter === 'ALL' ||
+        (statusFilter === 'ACTIVE' && product.isActive !== false) ||
+        (statusFilter === 'INACTIVE' && product.isActive === false) ||
+        (statusFilter === 'FEATURED' && product.isFeatured) ||
+        (statusFilter === 'NO_IMAGE' && !product.imageUrl);
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [categoryFilter, products, searchTerm, statusFilter]);
+
+  const activeCount = products.filter((product) => product.isActive !== false).length;
+  const featuredCount = products.filter((product) => product.isFeatured).length;
+  const noImageCount = products.filter((product) => !product.imageUrl).length;
+
   const resetForm = () => {
     setFormData({
         ...initialFormState,
@@ -52,6 +80,10 @@ export default function ProductManager({ categories, products }: { categories: C
         description: product.description,
         price: product.price,
         imageUrl: product.imageUrl || '',
+        galleryImage1: product.galleryImage1 || '',
+        galleryImage2: product.galleryImage2 || '',
+        galleryImage3: product.galleryImage3 || '',
+        videoUrl: product.videoUrl || '',
         proteins: product.proteins || 0,
         calories: product.calories || 0,
         weight: product.weight || 0,
@@ -132,29 +164,90 @@ export default function ProductManager({ categories, products }: { categories: C
       setFormData(prev => ({ ...prev, imageUrl: url }));
   }
 
+  const handleMediaUploaded = (field: 'galleryImage1' | 'galleryImage2' | 'galleryImage3' | 'videoUrl', url: string) => {
+      setFormData(prev => ({ ...prev, [field]: url }));
+  }
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-bold text-gray-800">Gerenciar Produtos</h2>
-        {!isEditing && (
-            <button 
-                onClick={() => setIsEditing(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
-            >
-                <Plus size={18} /> Novo Produto
-            </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Cardapio"
+        title="Produtos"
+        description="Gerencie fotos, categorias, sabores, adicionais e visibilidade dos itens."
+        action={!isEditing && (
+          <button onClick={() => setIsEditing(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800">
+            <Plus size={18} /> Novo produto
+          </button>
         )}
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <AdminStatCard label="Cadastrados" value={products.length} detail="itens no cardapio" icon={ToggleLeft} />
+        <AdminStatCard label="Ativos" value={activeCount} detail="visiveis no site" icon={Sparkles} />
+        <AdminStatCard label="Destaques" value={featuredCount} detail="prioridade na vitrine" icon={Sparkles} />
+        <AdminStatCard label="Sem foto" value={noImageCount} detail="precisam de midia" icon={ImageOff} />
       </div>
 
       {isEditing && (
-        <div className="mb-8 p-4 border rounded-lg bg-gray-50">
+        <AdminSection
+          title={editingId ? 'Editar produto' : 'Novo produto'}
+          description="Organize as informacoes em secoes curtas para evitar erros no cadastro."
+          action={<button onClick={resetForm} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"><X size={20} /></button>}
+        >
+        <div>
             <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-800">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
-                <button onClick={resetForm} className="text-gray-500 hover:text-gray-700"><X size={20} /></button>
+                <h3 className="font-semibold text-gray-800">Imagem do produto</h3>
             </div>
             
             <div className="mb-4">
                 <ImageUpload onUploadComplete={handleImageUploaded} />
+            </div>
+
+            <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                <h3 className="font-semibold text-gray-900">Galeria do produto</h3>
+                <p className="mt-1 text-sm text-gray-600">Adicione ate tres fotos extras e um video para aparecer na pagina do produto.</p>
+                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div>
+                        <ImageUpload title="Foto extra 1" onUploadComplete={(url) => handleMediaUploaded('galleryImage1', url)} />
+                        <input
+                            type="url"
+                            value={formData.galleryImage1}
+                            onChange={(e) => setFormData({ ...formData, galleryImage1: e.target.value })}
+                            placeholder="URL da foto extra 1"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <ImageUpload title="Foto extra 2" onUploadComplete={(url) => handleMediaUploaded('galleryImage2', url)} />
+                        <input
+                            type="url"
+                            value={formData.galleryImage2}
+                            onChange={(e) => setFormData({ ...formData, galleryImage2: e.target.value })}
+                            placeholder="URL da foto extra 2"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <ImageUpload title="Foto extra 3" onUploadComplete={(url) => handleMediaUploaded('galleryImage3', url)} />
+                        <input
+                            type="url"
+                            value={formData.galleryImage3}
+                            onChange={(e) => setFormData({ ...formData, galleryImage3: e.target.value })}
+                            placeholder="URL da foto extra 3"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                        />
+                    </div>
+                    <div>
+                        <ImageUpload title="Video do produto" accept="video/*" onUploadComplete={(url) => handleMediaUploaded('videoUrl', url)} />
+                        <input
+                            type="url"
+                            value={formData.videoUrl}
+                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                            placeholder="URL do video"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                        />
+                    </div>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -419,11 +512,48 @@ export default function ProductManager({ categories, products }: { categories: C
                 </div>
             </form>
         </div>
+        </AdminSection>
       )}
+
+      <AdminSection
+        title="Catalogo"
+        description="Filtre por categoria, status ou produtos que precisam de foto."
+        action={
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar produto..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full rounded-lg border border-emerald-100 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-emerald-600"
+            />
+          </div>
+        }
+      >
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
+        <button onClick={() => setCategoryFilter('ALL')} className={`rounded-lg px-3 py-2 text-sm font-semibold ${categoryFilter === 'ALL' ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>Todas categorias</button>
+        {categories.map((category) => (
+          <button key={category.id} onClick={() => setCategoryFilter(category.id)} className={`rounded-lg px-3 py-2 text-sm font-semibold ${categoryFilter === category.id ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>
+            {category.name}
+          </button>
+        ))}
+        {[
+          ['ALL', 'Todos status'],
+          ['ACTIVE', 'Ativos'],
+          ['INACTIVE', 'Inativos'],
+          ['FEATURED', 'Destaques'],
+          ['NO_IMAGE', 'Sem foto'],
+        ].map(([value, label]) => (
+          <button key={value} onClick={() => setStatusFilter(value)} className={`rounded-lg px-3 py-2 text-sm font-semibold ${statusFilter === value ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-8">
         {categories.map(category => {
-            const categoryProducts = products
+            const categoryProducts = visibleProducts
               .filter(p => p.categoryId === category.id)
               .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
             if (categoryProducts.length === 0) return null;
@@ -471,10 +601,11 @@ export default function ProductManager({ categories, products }: { categories: C
             );
         })}
 
-        {products.length === 0 && (
-            <p className="text-gray-500 text-center py-4">Nenhum produto cadastrado.</p>
+        {visibleProducts.length === 0 && (
+            <AdminEmptyState icon={ShoppingBag} title="Nenhum produto encontrado" description="Ajuste os filtros ou cadastre um novo item para o cardapio." />
         )}
       </div>
+      </AdminSection>
     </div>
   );
 }

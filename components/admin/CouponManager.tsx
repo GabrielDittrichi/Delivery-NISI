@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Trash2, Plus, Tag, RefreshCw } from 'lucide-react';
+import { BadgePercent, CalendarX, RefreshCw, ToggleLeft, Trash2, Plus, Tag } from 'lucide-react';
+import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
 
 interface Coupon {
   id: string;
@@ -27,6 +28,11 @@ export default function CouponManager() {
   });
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState('');
+
+  const activeCoupons = coupons.filter((coupon) => coupon.isActive).length;
+  const inactiveCoupons = coupons.filter((coupon) => !coupon.isActive).length;
+  const expiredCoupons = coupons.filter((coupon) => coupon.expiresAt && new Date(coupon.expiresAt) < new Date()).length;
+  const totalUses = coupons.reduce((total, coupon) => total + (coupon.usedCount || 0), 0);
 
   const fetchCoupons = async () => {
     setLoading(true);
@@ -108,31 +114,40 @@ export default function CouponManager() {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Tag size={20} />
-            Gerenciar Cupons
-        </h2>
-        <button onClick={fetchCoupons} className="text-gray-500 hover:text-green-600">
-            <RefreshCw size={20} />
-        </button>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Promocoes"
+        title="Cupons"
+        description="Crie e acompanhe regras promocionais para campanhas e clientes recorrentes."
+        action={
+          <button onClick={fetchCoupons} className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">
+              <RefreshCw size={18} /> Atualizar
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <AdminStatCard label="Ativos" value={activeCoupons} detail="liberados no checkout" icon={BadgePercent} />
+        <AdminStatCard label="Inativos" value={inactiveCoupons} detail="pausados" icon={ToggleLeft} />
+        <AdminStatCard label="Vencidos" value={expiredCoupons} detail="fora da validade" icon={CalendarX} />
+        <AdminStatCard label="Usos totais" value={totalUses} detail="registrados" icon={Tag} />
       </div>
 
-      <form onSubmit={handleCreate} className="bg-gray-50 p-4 rounded-lg border mb-6 space-y-4">
+      <AdminSection title="Novo cupom" description="Defina valor, validade e limite antes de divulgar.">
+      <form onSubmit={handleCreate} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input
                 type="text"
                 placeholder="Código (ex: PROMO10)"
                 value={newCoupon.code}
                 onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
-                className="border rounded-md p-2 uppercase"
+                className="rounded-lg border border-emerald-100 p-3 uppercase outline-none focus:ring-2 focus:ring-emerald-600"
                 required
             />
             <select
                 value={newCoupon.type}
                 onChange={(e) => setNewCoupon({ ...newCoupon, type: e.target.value })}
-                className="border rounded-md p-2 bg-white"
+                className="rounded-lg border border-emerald-100 bg-white p-3 outline-none focus:ring-2 focus:ring-emerald-600"
             >
                 <option value="PERCENTAGE">Porcentagem (%)</option>
                 <option value="FIXED">Valor Fixo (R$)</option>
@@ -142,7 +157,7 @@ export default function CouponManager() {
                 placeholder="Valor"
                 value={newCoupon.value}
                 onChange={(e) => setNewCoupon({ ...newCoupon, value: e.target.value })}
-                className="border rounded-md p-2"
+                className="rounded-lg border border-emerald-100 p-3 outline-none focus:ring-2 focus:ring-emerald-600"
                 required
                 min="0"
                 step="0.01"
@@ -152,7 +167,7 @@ export default function CouponManager() {
                 placeholder="Pedido mínimo (opcional)"
                 value={newCoupon.minOrder}
                 onChange={(e) => setNewCoupon({ ...newCoupon, minOrder: e.target.value })}
-                className="border rounded-md p-2"
+                className="rounded-lg border border-emerald-100 p-3 outline-none focus:ring-2 focus:ring-emerald-600"
                 min="0"
                 step="0.01"
             />
@@ -161,7 +176,7 @@ export default function CouponManager() {
                 placeholder="Limite de usos (opcional)"
                 value={newCoupon.usageLimit}
                 onChange={(e) => setNewCoupon({ ...newCoupon, usageLimit: e.target.value })}
-                className="border rounded-md p-2"
+                className="rounded-lg border border-emerald-100 p-3 outline-none focus:ring-2 focus:ring-emerald-600"
                 min="0"
                 step="1"
             />
@@ -169,7 +184,7 @@ export default function CouponManager() {
                 type="date"
                 value={newCoupon.expiresAt}
                 onChange={(e) => setNewCoupon({ ...newCoupon, expiresAt: e.target.value })}
-                className="border rounded-md p-2"
+                className="rounded-lg border border-emerald-100 p-3 outline-none focus:ring-2 focus:ring-emerald-600"
                 aria-label="Validade do cupom"
             />
         </div>
@@ -179,13 +194,15 @@ export default function CouponManager() {
             <button
                 type="submit"
                 disabled={creating || !newCoupon.code}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                className="flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
             >
                 <Plus size={18} /> Criar Cupom
             </button>
         </div>
       </form>
+      </AdminSection>
 
+      <AdminSection title="Cupons cadastrados">
       {loading ? (
         <p className="text-center text-gray-500 py-8">Carregando...</p>
       ) : (
@@ -242,7 +259,7 @@ export default function CouponManager() {
                     {coupons.length === 0 && (
                         <tr>
                             <td colSpan={6} className="p-8 text-center text-gray-500">
-                                Nenhum cupom encontrado.
+                                <AdminEmptyState icon={BadgePercent} title="Nenhum cupom encontrado" description="Crie o primeiro cupom para campanhas do cardapio." />
                             </td>
                         </tr>
                     )}
@@ -250,6 +267,7 @@ export default function CouponManager() {
             </table>
         </div>
       )}
+      </AdminSection>
     </div>
   );
 }

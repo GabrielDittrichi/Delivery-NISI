@@ -1,7 +1,8 @@
 'use client';
 
-import { Search, Users } from 'lucide-react';
+import { BadgeDollarSign, Repeat, Search, Star, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
 
 export interface Customer {
   name: string;
@@ -31,6 +32,11 @@ export default function CustomersManager({ initialCustomers }: { initialCustomer
     });
   }, [initialCustomers, searchTerm]);
 
+  const recurringCustomers = initialCustomers.filter((customer) => customer.ordersCount > 1).length;
+  const totalRevenue = initialCustomers.reduce((total, customer) => total + customer.totalSpent, 0);
+  const averageTicket = initialCustomers.length > 0 ? totalRevenue / initialCustomers.length : 0;
+  const bestCustomer = initialCustomers.slice().sort((a, b) => b.totalSpent - a.totalSpent)[0];
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
@@ -47,28 +53,37 @@ export default function CustomersManager({ initialCustomers }: { initialCustomer
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-800">
-            <Users className="text-emerald-700" />
-            Clientes
-          </h2>
-          <div className="relative w-full md:max-w-sm">
+      <AdminPageHeader
+        eyebrow="Relacionamento"
+        title="Clientes"
+        description="Veja quem compra, quanto compra e quais contatos voltaram mais de uma vez."
+      />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <AdminStatCard label="Clientes" value={initialCustomers.length} detail="contatos unicos por telefone" icon={Users} />
+        <AdminStatCard label="Recorrentes" value={recurringCustomers} detail="mais de um pedido" icon={Repeat} />
+        <AdminStatCard label="Ticket medio" value={formatCurrency(averageTicket)} detail="por cliente" icon={BadgeDollarSign} />
+        <AdminStatCard label="Maior cliente" value={bestCustomer?.ordersCount || 0} detail={bestCustomer?.name || 'Sem pedidos'} icon={Star} />
+      </div>
+
+      <AdminSection
+        title="Base de clientes"
+        description="Dados agregados automaticamente pelos pedidos do checkout."
+        action={
+          <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Buscar por nome, telefone ou bairro..."
-              className="w-full rounded-lg border py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-emerald-600"
+              className="w-full rounded-lg border border-emerald-100 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-emerald-600"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
           </div>
-        </div>
-
+        }
+      >
         {customers.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-10 text-center text-gray-500">
-            Nenhum cliente encontrado ainda. Os clientes aparecem aqui depois dos pedidos concluídos no checkout.
-          </div>
+          <AdminEmptyState icon={Users} title="Nenhum cliente encontrado" description="Os clientes aparecem aqui depois dos pedidos concluidos no checkout." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left">
@@ -109,7 +124,7 @@ export default function CustomersManager({ initialCustomers }: { initialCustomer
             </table>
           </div>
         )}
-      </div>
+      </AdminSection>
     </div>
   );
 }
