@@ -50,11 +50,11 @@ export default function ProductDetails({
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [isImageOpen, setIsImageOpen] = useState(false);
   const mediaItems = useMemo(() => [
+    product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Video do produto' } : null,
     product.imageUrl ? { type: 'image' as const, url: product.imageUrl, label: 'Foto principal' } : null,
     product.galleryImage1 ? { type: 'image' as const, url: product.galleryImage1, label: 'Foto 2' } : null,
     product.galleryImage2 ? { type: 'image' as const, url: product.galleryImage2, label: 'Foto 3' } : null,
     product.galleryImage3 ? { type: 'image' as const, url: product.galleryImage3, label: 'Foto 4' } : null,
-    product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Video' } : null,
   ].filter(Boolean) as { type: 'image' | 'video'; url: string; label: string }[], [product.galleryImage1, product.galleryImage2, product.galleryImage3, product.imageUrl, product.videoUrl]);
   const [selectedMediaUrl, setSelectedMediaUrl] = useState(mediaItems[0]?.url || '');
   const { addToCart } = useCart();
@@ -129,6 +129,7 @@ export default function ProductDetails({
               {selectedMedia ? (
                 selectedMedia.type === 'video' ? (
                   <video
+                    key={selectedMedia.url}
                     src={selectedMedia.url}
                     autoPlay
                     loop
@@ -178,9 +179,12 @@ export default function ProductDetails({
                   >
                     {item.type === 'video' ? (
                       <>
-                        <video src={item.url} muted playsInline preload="metadata" className="h-full w-full object-cover" aria-hidden="true" />
-                        <span className="absolute inset-0 flex items-center justify-center bg-emerald-950/20 text-white">
-                          <Play size={22} fill="currentColor" />
+                        <video src={`${item.url}#t=0.1`} muted playsInline preload="auto" className="h-full w-full object-cover" aria-hidden="true" />
+                        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-emerald-950/25 text-white">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/22 backdrop-blur">
+                            <Play size={18} fill="currentColor" />
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.12em]">Video</span>
                         </span>
                       </>
                     ) : (
