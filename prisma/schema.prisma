@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,19 +8,19 @@ datasource db {
 }
 
 model Restaurant {
-  id           String @id @default(cuid())
-  name         String
-  description  String
-  rating       Float  @default(0)
-  deliveryTime String?
-  deliveryFee  Float  @default(0)
-  minOrder     Float  @default(0)
-  bannerUrl    String?
-  logoUrl      String?
-  primaryColor String @default("#16a34a")
-  whatsapp     String?
-  address      String?
-  businessHours String?
+  id                String  @id @default(cuid())
+  name              String
+  description       String
+  rating            Float   @default(0)
+  deliveryTime      String?
+  deliveryFee       Float   @default(0)
+  minOrder          Float   @default(0)
+  bannerUrl         String?
+  logoUrl           String?
+  primaryColor      String  @default("#16a34a")
+  whatsapp          String?
+  address           String?
+  businessHours     String?
   institutionalText String?
 }
 
@@ -33,30 +32,30 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String
-  price       Float
-  imageUrl    String?
-  galleryImage1 String?
-  galleryImage2 String?
-  galleryImage3 String?
-  videoUrl    String?
-  proteins    Float    @default(0)
-  calories    Float    @default(0)
-  weight      Float    @default(0) // em gramas
-  volume      Float    @default(0) // em ml
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  flavors     Flavor[]
-  addons      Addon[]
-  allowMultipleAddons Boolean @default(true)
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  orderItems  OrderItem[]
-  views       ProductView[]
+  id                  String        @id @default(cuid())
+  name                String
+  slug                String        @unique
+  description         String
+  price               Float
+  imageUrl            String?
+  proteins            Float         @default(0)
+  calories            Float         @default(0)
+  weight              Float         @default(0)
+  volume              Float         @default(0)
+  categoryId          String
+  allowMultipleAddons Boolean       @default(true)
+  isActive            Boolean       @default(true)
+  isFeatured          Boolean       @default(false)
+  sortOrder           Int           @default(0)
+  galleryImage1       String?
+  galleryImage2       String?
+  galleryImage3       String?
+  videoUrl            String?
+  addons              Addon[]
+  flavors             Flavor[]
+  orderItems          OrderItem[]
+  category            Category      @relation(fields: [categoryId], references: [id])
+  views               ProductView[]
 }
 
 model Flavor {
@@ -77,7 +76,7 @@ model Addon {
 model Coupon {
   id         String    @id @default(cuid())
   code       String    @unique
-  type       String    @default("PERCENTAGE") // PERCENTAGE | FIXED
+  type       String    @default("PERCENTAGE")
   value      Float
   isActive   Boolean   @default(true)
   expiresAt  DateTime?
@@ -88,14 +87,10 @@ model Coupon {
   updatedAt  DateTime  @updatedAt
 }
 
-// Analytics & Orders
-
 model Order {
   id             String      @id @default(cuid())
   customerName   String
   customerPhone  String
-  
-  // Address
   cep            String
   street         String
   number         String
@@ -103,36 +98,31 @@ model Order {
   neighborhood   String
   city           String
   state          String
-  
   paymentMethod  String
-  deliveryMethod String      @default("DELIVERY") // DELIVERY, PICKUP
+  deliveryMethod String      @default("DELIVERY")
   observations   String?
-  
   subtotal       Float
   deliveryFee    Float
   discount       Float
   total          Float
-  
-  status         String      @default("PENDING") // PENDING, CONFIRMED, DELIVERED, CANCELED
-  
-  items          OrderItem[]
-  
+  status         String      @default("PENDING")
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+  items          OrderItem[]
 }
 
 model OrderItem {
   id             String  @id @default(cuid())
   orderId        String
-  order          Order   @relation(fields: [orderId], references: [id])
   productId      String
-  product        Product @relation(fields: [productId], references: [id])
-  productName    String  // Snapshot do nome
+  productName    String
   quantity       Int
-  price          Float   // Preço unitário no momento da compra
+  price          Float
   total          Float
   selectedFlavor String?
-  selectedAddons String? // JSON stringified list of addons
+  selectedAddons String?
+  order          Order   @relation(fields: [orderId], references: [id])
+  product        Product @relation(fields: [productId], references: [id])
 }
 
 model Visit {
@@ -140,7 +130,7 @@ model Visit {
   ip        String?
   userAgent String?
   referer   String?
-  platform  String?  // Instagram, Facebook, Google, Direct, etc.
+  platform  String?
   city      String?
   country   String?
   createdAt DateTime @default(now())
@@ -149,8 +139,8 @@ model Visit {
 model ProductView {
   id        String   @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model AnalyticsEvent {

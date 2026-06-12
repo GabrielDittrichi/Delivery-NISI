@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fibra-prebiotica",
+    "slug": "fibra-prebiotica",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "shot-matinal",
+    "slug": "shot-matinal",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "energy",
+    "slug": "energy",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "acelera",
+    "slug": "acelera",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "pudim",
+    "slug": "pudim",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "shake-garrafa",
+    "slug": "shake-de-garrafa",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "bolo-pote",
+    "slug": "bolo-de-pote",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "sanduiche-atum",
+    "slug": "sanduiche-de-atum",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "nutrisoup",
+    "slug": "nutrisoup",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "shake-proteico",
+    "slug": "shake-proteico",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "torta-frango",
+    "slug": "torta-de-frango",
+    "imageUrl": "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/561bb101-a7e5-48f6-8b87-3c3a73482fb0.jpeg",
+    "videoUrl": "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/a2f89c85-3b6a-490a-bbdd-1ee66fed92af.mp4"
+  },
+  {
+    "id": "empada",
+    "slug": "empada",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "omelete",
+    "slug": "omelete",
+    "imageUrl": "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/c642d8e5-3307-4d57-b0d7-8e3101f78eb9.jpeg",
+    "videoUrl": null
+  },
+  {
+    "id": "pao-de-queijo",
+    "slug": "pao-de-queijo",
+    "imageUrl": null,
+    "videoUrl": null
+  },
+  {
+    "id": "sanduiche-frango",
+    "slug": "sanduiche-de-frango",
+    "imageUrl": "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/105801dc-3fed-4f85-b0f2-b02bf7e25b2b.jpeg",
+    "videoUrl": "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/c4d9a80b-6ce5-4ac3-a829-6e5d27ddf178.mp4"
+  }
+]
