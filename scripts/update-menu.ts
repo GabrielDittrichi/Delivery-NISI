@@ -152,7 +152,7 @@ const sampleProducts = [
     name: 'Bolo de Pote Proteico',
     slug: 'bolo-de-pote-proteico',
     description: 'Bolo de pote proteico delicioso.',
-    price: 17,
+    price: 27,
     imageUrl: null,
     proteins: 0,
     calories: 0,
