@@ -53,8 +53,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
           >
             <Link
               href={`/product/${product.slug}`}
-              className="block h-full w-[260px] rounded-lg border bg-white p-3 shadow-sm transition-all hover:-translate-y-[1px] hover:shadow-md"
-              style={{ borderColor: 'var(--border)' }}
+              className="block h-full w-[260px] rounded-lg border border-emerald-100 bg-white p-3 shadow-sm transition-all hover:-translate-y-[1px] hover:shadow-md"
             >
               <div className="relative mb-3 aspect-[5/3] overflow-hidden rounded-md bg-emerald-50">
                 {product.imageUrl ? (

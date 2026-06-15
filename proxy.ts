@@ -12,7 +12,6 @@ function unauthorized() {
 function isProtectedPath(pathname: string) {
   if (pathname.startsWith('/admin')) return true;
   if (pathname === '/api/coupons/validate') return false;
-  // Admin-only APIs:
   if (pathname.startsWith('/api/coupons')) return true;
   if (pathname.startsWith('/api/upload')) return true;
   return false;
@@ -28,7 +27,6 @@ export function proxy(req: NextRequest) {
     .filter(Boolean);
   const pass = process.env.ADMIN_PASS;
   if (users.length === 0 || !pass) {
-    // Fail closed: if env isn't configured, keep admin locked.
     return unauthorized();
   }
 

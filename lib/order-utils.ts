@@ -26,16 +26,5 @@ export function calculateDiscount(total: number, coupon: { type: string; value: 
   return Math.min(total, Math.max(0, discount));
 }
 
-export function slugify(text: string) {
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-}
+export { slugify } from './slugify';
 

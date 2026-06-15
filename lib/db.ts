@@ -354,7 +354,7 @@ export const sampleProducts: Product[] = [
       { id: "addon-borda-chocolate", name: "Borda chocolate", price: 5 },
       { id: "addon-borda-cafe", name: "Borda cafe", price: 5 },
       { id: "addon-borda-morango", name: "Borda morango", price: 5 },
-      { id: "addon-borda-irimao", name: "Borda irimao", price: 5 },
+      { id: "addon-borda-irmao", name: "Borda Irmao", price: 5 },
       { id: "addon-borda-pistache", name: "Borda pistache", price: 5 },
       { id: "addon-borda-banana", name: "Borda banana", price: 5 },
       { id: "addon-borda-abacaxi", name: "Borda abacaxi", price: 5 },

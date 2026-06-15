@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('DELIVERY');
   const [formData, setFormData] = useState({
     name: '',
@@ -177,18 +178,19 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     if (items.length === 0) {
-        alert('Seu carrinho está vazio');
+        setSubmitError('Seu carrinho está vazio');
         return;
     }
     const phoneDigits = formData.phone.replace(/\D/g, '');
     const cepDigits = formData.cep.replace(/\D/g, '');
     if (phoneDigits.length < 10) {
-        alert('Informe um telefone valido para o atendimento.');
+        setSubmitError('Informe um telefone valido para o atendimento.');
         return;
     }
     if (deliveryMethod === 'DELIVERY' && (cepDigits.length !== 8 || !!cepError)) {
-        alert('Informe um CEP valido para entrega.');
+        setSubmitError('Informe um CEP valido para entrega.');
         return;
     }
 
@@ -199,12 +201,21 @@ export default function CheckoutPage() {
       num_items: items.reduce((count, item) => count + item.quantity, 0),
     });
     
-    // Preparar dados do pedido
     const orderData = {
-        ...formData,
+        name: formData.name,
+        phone: formData.phone,
+        cep: formData.cep,
+        street: formData.street,
+        number: formData.number,
+        complement: formData.complement,
+        neighborhood: formData.neighborhood,
+        city: formData.city,
+        state: formData.state,
+        paymentMethod: formData.paymentMethod,
+        observations: formData.observations,
         deliveryMethod,
         subtotal: cartTotal,
-        deliveryFee: 0, // Taxa calculada no atendimento
+        deliveryFee: 0,
         discount: discount,
         total: Math.max(0, cartTotal - discount),
         couponCode: appliedCoupon?.code,
@@ -288,7 +299,7 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
         window.open(whatsappUrl, '_blank');
         router.push('/');
     } else {
-        alert('Erro ao processar pedido. Tente novamente.');
+        setSubmitError('Erro ao processar pedido. Tente novamente.');
     }
     setIsSubmitting(false);
   };
@@ -697,6 +708,16 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                   )}
                 </div>
             </motion.div>
+
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800"
+                >
+                  {submitError}
+                </motion.div>
+              )}
 
 	            <motion.button 
                 initial={{ opacity: 0, y: 20 }}

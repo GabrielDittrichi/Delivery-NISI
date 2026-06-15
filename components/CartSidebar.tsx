@@ -152,15 +152,14 @@ export default function CartSidebar() {
                     <span>Total</span>
                     <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
                   </div>
-                  <p className="text-xs text-gray-600 text-center bg-white p-2 rounded border" style={{ borderColor: 'var(--border)' }}>
+                  <p className="text-xs text-gray-600 text-center bg-white p-2 rounded border border-emerald-100">
                     Frete e horarios confirmados no atendimento.
                   </p>
                   {shouldSuggestMore && (
                     <Link
                       href="/#destaques"
                       onClick={() => setIsCartOpen(false)}
-                      className="block w-full rounded-lg border bg-white px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-emerald-50"
-                      style={{ borderColor: 'var(--border)' }}
+                      className="block w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-emerald-50"
                     >
                       <span className="block font-semibold text-emerald-800">Complete sua rotina</span>
                       <span>Veja shakes, bebidas e sobremesas antes de finalizar.</span>

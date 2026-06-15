@@ -2,6 +2,7 @@
 
 import { prisma } from './prisma';
 import { getData, Category, Product, Restaurant } from './db';
+import { slugify } from './slugify';
 import { revalidatePath } from 'next/cache';
 
 export async function getStoreData() {
@@ -208,19 +209,6 @@ export async function deleteCategory(id: string) {
   revalidatePath('/admin');
 }
 
-function slugify(text: string) {
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-}
-
 export async function addProduct(product: Omit<Product, 'id' | 'slug' | 'flavors' | 'addons'> & { flavors?: string[], addons?: { name: string, price: number }[] }) {
   await prisma.product.create({
     data: {
@@ -255,6 +243,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'slug' | 'flavors
   });
   revalidatePath('/');
   revalidatePath('/admin');
+  revalidatePath('/product/[slug]');
 }
 
 export async function updateProduct(product: Omit<Product, 'slug' | 'flavors' | 'addons'> & { flavors?: string[], addons?: { name: string, price: number }[] }) {
@@ -300,6 +289,7 @@ export async function updateProduct(product: Omit<Product, 'slug' | 'flavors' | 
   });
   revalidatePath('/');
   revalidatePath('/admin');
+  revalidatePath('/product/[slug]');
 }
 
 export async function deleteProduct(id: string) {
@@ -308,4 +298,5 @@ export async function deleteProduct(id: string) {
   });
   revalidatePath('/');
   revalidatePath('/admin');
+  revalidatePath('/product/[slug]');
 }

@@ -1,5 +1,3 @@
-import type { NextConfig } from "next";
-
 function getImageHostFromEnv(envValue?: string) {
   if (!envValue) return null;
   try {
@@ -11,7 +9,6 @@ function getImageHostFromEnv(envValue?: string) {
 }
 
 const nextConfig = {
-  /* config options here */
   eslint: {
     ignoreDuringBuilds: true,
   },

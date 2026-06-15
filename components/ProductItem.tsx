@@ -7,7 +7,7 @@ import ProductBadges from './ProductBadges';
 export default function ProductItem({ product }: { product: Product }) {
     return (
         <Link href={`/product/${product.slug}`} className="block">
-            <div className="bg-white p-4 rounded-lg shadow-sm border flex gap-4 transition-all cursor-pointer group h-full hover:shadow-md hover:-translate-y-[1px] active:translate-y-0" style={{ borderColor: 'var(--border)' }}>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-emerald-100 flex gap-4 transition-all cursor-pointer group h-full hover:shadow-md hover:-translate-y-[1px] active:translate-y-0">
                 <div className="flex-1 flex flex-col justify-between">
                     <div>
                         <h3 className="font-semibold text-gray-900 group-hover:opacity-80 transition-opacity">{product.name}</h3>

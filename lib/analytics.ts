@@ -153,7 +153,7 @@ export async function createOrder(orderData: CreateOrderInput) {
       await prisma.coupon.update({
         where: { code: orderData.couponCode },
         data: { usedCount: { increment: 1 } },
-      }).catch(() => {});
+      }).catch((e) => console.error('Failed to increment coupon usage:', e));
     }
     return { success: true, orderId: order.id };
   } catch (error) {
@@ -238,18 +238,17 @@ export async function getDashboardMetrics() {
     // Pedidos por dia (últimos 7 dias)
     const last7Days = new Date();
     last7Days.setDate(last7Days.getDate() - 7);
-    const dailyOrdersRaw = await prisma.order.groupBy({
-        by: ['createdAt'],
-        _sum: { total: true },
-        where: { createdAt: { gte: last7Days } }
+    const dailyOrdersRaw = await prisma.order.findMany({
+        where: { createdAt: { gte: last7Days }, status: { not: 'CANCELED' } },
+        select: { createdAt: true, total: true }
     });
-    
-    // Processar para agrupar por dia (YY-MM-DD)
-    const dailyOrdersMap = new Map();
+
+    // Agrupar por dia (YYYY-MM-DD)
+    const dailyOrdersMap = new Map<string, number>();
     dailyOrdersRaw.forEach(item => {
         const date = item.createdAt.toISOString().split('T')[0];
         const current = dailyOrdersMap.get(date) || 0;
-        dailyOrdersMap.set(date, current + (item._sum.total || 0));
+        dailyOrdersMap.set(date, current + item.total);
     });
 
     const dailyRevenue = Array.from(dailyOrdersMap.entries()).map(([date, total]) => ({ date, total }));
