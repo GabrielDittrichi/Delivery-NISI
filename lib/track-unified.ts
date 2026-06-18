@@ -1,5 +1,5 @@
 import { trackMarketingEvent } from './tracking';
-import { generateEventId } from './meta-capi';
+import { generateEventId } from './event-id';
 
 export function trackPixelAndCapi(
   eventName: string,

@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { generateEventId } from './event-id';
 
 const META_API_VERSION = 'v21.0';
 
@@ -99,9 +100,7 @@ export async function trackMetaCapiEvent(event: MetaCapiEvent) {
   }
 }
 
-export function generateEventId(): string {
-  return `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-}
+export { generateEventId } from './event-id';
 
 export function parseMetaCookies(cookieHeader?: string | null): { fbc?: string; fbp?: string } {
   if (!cookieHeader) return {};
