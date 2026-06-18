@@ -18,6 +18,7 @@ export async function POST(req: Request) {
         : undefined;
 
     await trackEvent(type as 'add_to_cart' | 'checkout_started', metadata);
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Failed to record analytics event:', error);

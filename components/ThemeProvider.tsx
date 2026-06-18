@@ -21,7 +21,7 @@ function normalizeHexColor(input: string | null | undefined): string | null {
 }
 
 export function ThemeProvider({ brandColor, children }: { brandColor?: string | null; children: React.ReactNode }) {
-  const brand = useMemo(() => normalizeHexColor(brandColor) ?? '#ea1d2c', [brandColor]);
+  const brand = useMemo(() => normalizeHexColor(brandColor) ?? '#16803C', [brandColor]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -34,7 +34,7 @@ export function ThemeProvider({ brandColor, children }: { brandColor?: string | 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    return { brand: '#ea1d2c' };
+    return { brand: '#16803C' };
   }
   return ctx;
 }

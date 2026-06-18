@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { trackProductView } from '@/lib/analytics';
-import { trackMarketingEvent } from '@/lib/tracking';
+import { trackPixelAndCapi } from '@/lib/track-unified';
 import Image from 'next/image';
 
 function formatCurrency(value: number) {
@@ -63,13 +63,15 @@ export default function ProductDetails({
   const requiresFlavor = product.flavors.length > 0;
 
   useEffect(() => {
-    trackProductView(product.id);
-    trackMarketingEvent('ViewContent', {
+    const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    trackProductView(product.id, eventId, { clientUserAgent: navigator.userAgent });
+    trackPixelAndCapi('ViewContent', {
       content_ids: [product.id],
       content_name: product.name,
+      content_type: 'product',
       currency: 'BRL',
       value: product.price,
-    });
+    }, eventId);
   }, [product.id, product.name, product.price]);
 
   useEffect(() => {
@@ -148,7 +150,7 @@ export default function ProductDetails({
                       priority
                       sizes="(max-width: 1024px) 100vw, 58vw"
                       className="object-contain"
-                      unoptimized
+                     
                     />
                     <span className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/90 text-emerald-800 shadow-sm transition-colors group-hover:bg-emerald-50">
                       <ZoomIn size={20} />
@@ -188,7 +190,7 @@ export default function ProductDetails({
                         </span>
                       </>
                     ) : (
-                      <Image src={item.url} alt={item.label} fill sizes="96px" className="object-cover" unoptimized />
+                      <Image src={item.url} alt={item.label} fill sizes="96px" className="object-cover" />
                     )}
                   </button>
                 ))}
@@ -331,7 +333,7 @@ export default function ProductDetails({
                   <Link key={item.id} href={`/product/${item.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:bg-emerald-50">
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-emerald-50">
                       {item.imageUrl ? (
-                        <Image src={item.imageUrl} alt={item.name} fill sizes="56px" className="object-cover" unoptimized />
+                        <Image src={item.imageUrl} alt={item.name} fill sizes="56px" className="object-cover" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-emerald-700">
                           <Leaf size={20} />
@@ -356,7 +358,7 @@ export default function ProductDetails({
             <X size={30} />
           </button>
           <div className="relative h-[88vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
-            <Image src={selectedMedia.url} alt={product.name} fill sizes="100vw" className="object-contain" unoptimized />
+            <Image src={selectedMedia.url} alt={product.name} fill sizes="100vw" className="object-contain" />
           </div>
         </div>
       )}

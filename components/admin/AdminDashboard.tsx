@@ -15,7 +15,6 @@ import {
   BadgePercent,
   BarChart3,
   ClipboardList,
-  LayoutDashboard,
   ListTree,
   Package,
   Settings,
@@ -30,15 +29,15 @@ const tabs: {
   label: string;
   shortLabel: string;
   description: string;
-  icon: typeof LayoutDashboard;
+  icon: typeof BarChart3;
 }[] = [
-  { id: 'overview', label: 'Visao geral', shortLabel: 'Geral', description: 'Indicadores e alertas do dia', icon: BarChart3 },
+  { id: 'overview', label: 'Visão Geral', shortLabel: 'Geral', description: 'Indicadores e alertas do dia', icon: BarChart3 },
   { id: 'orders', label: 'Pedidos', shortLabel: 'Pedidos', description: 'Acompanhe o atendimento', icon: ClipboardList },
-  { id: 'customers', label: 'Clientes', shortLabel: 'Clientes', description: 'Historico e recorrencia', icon: Users },
-  { id: 'products', label: 'Produtos', shortLabel: 'Produtos', description: 'Cardapio e disponibilidade', icon: ShoppingBag },
-  { id: 'categories', label: 'Categorias', shortLabel: 'Categorias', description: 'Organizacao do cardapio', icon: ListTree },
-  { id: 'coupons', label: 'Cupons', shortLabel: 'Cupons', description: 'Promocoes e regras', icon: BadgePercent },
-  { id: 'restaurant', label: 'Configuracoes', shortLabel: 'Config.', description: 'Dados do restaurante', icon: Settings },
+  { id: 'customers', label: 'Clientes', shortLabel: 'Clientes', description: 'Histórico e recorrência', icon: Users },
+  { id: 'products', label: 'Produtos', shortLabel: 'Produtos', description: 'Cardápio e disponibilidade', icon: ShoppingBag },
+  { id: 'categories', label: 'Categorias', shortLabel: 'Categorias', description: 'Organização do cardápio', icon: ListTree },
+  { id: 'coupons', label: 'Cupons', shortLabel: 'Cupons', description: 'Promoções e regras', icon: BadgePercent },
+  { id: 'restaurant', label: 'Configurações', shortLabel: 'Config.', description: 'Dados do restaurante', icon: Settings },
 ];
 
 export default function AdminDashboard({
@@ -95,7 +94,11 @@ export default function AdminDashboard({
               <Package size={21} />
             </div>
             <h1 className="mt-3 text-lg font-bold text-gray-950">NISI Admin</h1>
-            <p className="mt-1 text-sm leading-5 text-gray-500">Operacao do cardapio digital.</p>
+            <p className="mt-1 text-sm leading-5 text-gray-500">Operação do cardápio digital.</p>
+            <a href="/" target="_blank" className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100">
+              <ShoppingBag size={16} />
+              Ver cardápio
+            </a>
           </div>
 
           <nav className="grid grid-cols-4 gap-2 overflow-x-auto pb-1 sm:grid-cols-7 lg:flex lg:flex-col lg:overflow-visible lg:pb-0">

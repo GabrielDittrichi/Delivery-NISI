@@ -7,6 +7,7 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import MarketingTags from "@/components/MarketingTags";
 import { prisma } from "@/lib/prisma";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,13 +30,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let brandColor: string | null = null;
-  // Avoid crashing builds/prerender when DATABASE_URL isn't configured (e.g., CI/build-only).
+  let minOrder = 0;
   if (process.env.DATABASE_URL) {
     try {
       const restaurant = await prisma.restaurant.findFirst({
-        select: { primaryColor: true },
+        select: { primaryColor: true, minOrder: true },
       });
       brandColor = restaurant?.primaryColor ?? null;
+      minOrder = restaurant?.minOrder ?? 0;
     } catch {
       brandColor = null;
     }
@@ -51,7 +53,8 @@ export default async function RootLayout({
             <MarketingTags />
             <AnalyticsTracker />
             {children}
-            <CartSidebar />
+            <CartSidebar minOrder={minOrder} />
+            <Toaster richColors position="top-right" closeButton />
           </CartProvider>
         </ThemeProvider>
       </body>

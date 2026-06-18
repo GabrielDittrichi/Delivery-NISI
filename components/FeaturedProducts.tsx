@@ -7,21 +7,12 @@ import { ArrowRight, Leaf, Sparkles } from 'lucide-react';
 import { Product } from '@/lib/db';
 import ProductBadges from './ProductBadges';
 
-function scoreProduct(product: Product) {
-  const text = `${product.name} ${product.description}`.toLowerCase();
-  let score = 0;
-  if (product.isFeatured) score += 10;
-  if (text.includes('shake')) score += 4;
-  if (text.includes('prote')) score += 3;
-  if (text.includes('energia') || text.includes('cha') || text.includes('chá')) score += 3;
-  if (product.imageUrl) score += 2;
-  if (product.addons.length > 0 || product.flavors.length > 0) score += 1;
-  return score;
-}
-
 export default function FeaturedProducts({ products }: { products: Product[] }) {
   const featured = [...products]
-    .sort((a, b) => scoreProduct(b) - scoreProduct(a))
+    .sort((a, b) => {
+      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+      return (a.sortOrder || 0) - (b.sortOrder || 0);
+    })
     .slice(0, 6);
 
   if (featured.length === 0) return null;
@@ -57,7 +48,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
             >
               <div className="relative mb-3 aspect-[5/3] overflow-hidden rounded-md bg-emerald-50">
                 {product.imageUrl ? (
-                  <Image src={product.imageUrl} alt={product.name} fill sizes="260px" className="object-cover" unoptimized />
+                  <Image src={product.imageUrl} alt={product.name} fill sizes="260px" className="object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-emerald-700">
                     <Leaf size={34} />

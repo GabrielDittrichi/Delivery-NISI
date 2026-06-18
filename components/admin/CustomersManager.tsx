@@ -56,14 +56,14 @@ export default function CustomersManager({ initialCustomers }: { initialCustomer
       <AdminPageHeader
         eyebrow="Relacionamento"
         title="Clientes"
-        description="Veja quem compra, quanto compra e quais contatos voltaram mais de uma vez."
+        description="Veja quem compra, quanto compra e quem voltou mais de uma vez."
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <AdminStatCard label="Clientes" value={initialCustomers.length} detail="contatos unicos por telefone" icon={Users} />
         <AdminStatCard label="Recorrentes" value={recurringCustomers} detail="mais de um pedido" icon={Repeat} />
-        <AdminStatCard label="Ticket medio" value={formatCurrency(averageTicket)} detail="por cliente" icon={BadgeDollarSign} />
-        <AdminStatCard label="Maior cliente" value={bestCustomer?.ordersCount || 0} detail={bestCustomer?.name || 'Sem pedidos'} icon={Star} />
+        <AdminStatCard label="Ticket médio" value={formatCurrency(averageTicket)} detail="por cliente" icon={BadgeDollarSign} />
+        <AdminStatCard label="Maior cliente" value={formatCurrency(bestCustomer?.totalSpent || 0)} detail={bestCustomer?.name || 'Sem pedidos'} icon={Star} />
       </div>
 
       <AdminSection
@@ -91,9 +91,9 @@ export default function CustomersManager({ initialCustomers }: { initialCustomer
                 <tr className="border-b bg-emerald-50/60 text-sm text-emerald-950">
                   <th className="p-3 font-semibold">Cliente</th>
                   <th className="p-3 font-semibold">Contato</th>
-                  <th className="p-3 font-semibold">Endereco</th>
+                  <th className="p-3 font-semibold">Endereço</th>
                   <th className="p-3 font-semibold">Pedidos</th>
-                  <th className="p-3 font-semibold">Ultimo pedido</th>
+                  <th className="p-3 font-semibold">Último pedido</th>
                   <th className="p-3 font-semibold text-right">Comprou</th>
                 </tr>
               </thead>

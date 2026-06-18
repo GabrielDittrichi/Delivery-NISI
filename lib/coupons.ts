@@ -1,3 +1,8 @@
+// ⚠️ In-memory coupon store (fallback when no database).
+// WARNING: This data does NOT persist across serverless cold starts.
+// In production with DATABASE_URL set, coupons are stored in the database.
+// This fallback is only for local development/testing without a database.
+
 export interface CouponRecord {
   id: string;
   code: string;

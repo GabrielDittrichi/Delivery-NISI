@@ -5,6 +5,9 @@ import { updateOrderStatus } from '@/lib/actions';
 import { ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Truck, Package, Search, Banknote, Bike } from 'lucide-react';
 import clsx from 'clsx';
 import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
+import ConfirmDialog from './ConfirmDialog';
+import { toast } from 'sonner';
+import type { ConfirmConfig } from './ConfirmDialog';
 
 // Define types based on Prisma schema since we don't have direct access to generated types in client component easily without importing from @prisma/client
 interface OrderItem {
@@ -37,6 +40,8 @@ interface Order {
 
 export type { Order };
 
+const orderCurrencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export default function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
@@ -46,6 +51,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
   const [filterDate, setFilterDate] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     setUpdating(orderId);
@@ -54,12 +60,25 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
       setOrders(prev => prev.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
+      const label = newStatus === 'CONFIRMED' ? 'confirmado' : newStatus === 'DELIVERED' ? 'entregue' : newStatus === 'CANCELED' ? 'cancelado' : 'atualizado';
+      toast.success(`Pedido ${label} com sucesso!`);
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('Erro ao atualizar status');
+      toast.error('Erro ao atualizar status');
     } finally {
       setUpdating(null);
     }
+  };
+
+  const handleCancelClick = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    setConfirm({
+      title: 'Cancelar pedido',
+      message: `Tem certeza que deseja cancelar o pedido de ${order?.customerName || 'desconhecido'}? Esta acao nao pode ser desfeita.`,
+      destructive: true,
+      confirmLabel: 'Cancelar pedido',
+      onConfirm: () => handleStatusUpdate(orderId, 'CANCELED'),
+    });
   };
 
   const filteredOrders = orders.filter(order => {
@@ -101,9 +120,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  const formatCurrency = (value: number) => orderCurrencyFormatter.format(value);
 
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleString('pt-BR', {
@@ -185,7 +202,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
                 onClick={() => setFilterPayment(payment)}
                 className={clsx("px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors", filterPayment === payment ? "bg-emerald-700 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}
               >
-                {payment === 'ALL' ? 'Pagamentos' : payment}
+                {payment === 'ALL' ? 'Pagamentos' : payment === 'PIX' ? 'PIX' : payment === 'MONEY' ? 'Dinheiro' : payment === 'CREDIT' ? 'Crédito' : 'Débito'}
               </button>
             ))}
           </div>
@@ -288,9 +305,9 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
                                   Confirmar Pedido
                                 </button>
                                 <button 
-                                  onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'CANCELED'); }}
+                                  onClick={(event) => { event.stopPropagation(); handleCancelClick(order.id); }}
                                   disabled={updating === order.id}
-                                  className="bg-emerald-800 text-white py-2 px-4 rounded hover:bg-emerald-900 disabled:opacity-50"
+                                  className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 disabled:opacity-50"
                                 >
                                   Cancelar
                                 </button>
@@ -322,6 +339,8 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
           )}
         </div>
       </AdminSection>
+
+      <ConfirmDialog config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

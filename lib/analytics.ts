@@ -1,6 +1,9 @@
 'use server'
 
 import { prisma } from './prisma';
+import { createOrderSchema } from './validations';
+import { trackMetaCapiEvent } from './meta-capi';
+import type { MetaCapiUserData } from './meta-capi';
 
 type CartAddon = { id: string; name: string; price: number };
 type CartItemInput = {
@@ -32,11 +35,19 @@ type CreateOrderInput = {
   total: number;
   couponCode?: string;
   items: CartItemInput[];
+  eventId?: string;
+  metaUserData?: MetaCapiUserData;
 };
 
 type AnalyticsEventType = 'visit' | 'product_view' | 'add_to_cart' | 'checkout_started' | 'order_created';
 
-export async function trackEvent(type: AnalyticsEventType, metadata?: Record<string, unknown>) {
+export async function trackEvent(
+  type: AnalyticsEventType,
+  metadata?: Record<string, unknown>,
+  eventId?: string,
+  metaUserData?: MetaCapiUserData,
+) {
+  if (!eventId) eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   if (!process.env.DATABASE_URL) return;
   try {
     await prisma.analyticsEvent.create({
@@ -47,6 +58,23 @@ export async function trackEvent(type: AnalyticsEventType, metadata?: Record<str
     });
   } catch (error) {
     console.error(`Failed to track event ${type}:`, error);
+  }
+
+  // Send to Meta CAPI
+  const metaEventName = type === 'add_to_cart' ? 'AddToCart'
+    : type === 'checkout_started' ? 'InitiateCheckout'
+    : type === 'order_created' ? 'Purchase'
+    : type === 'product_view' ? 'ViewContent'
+    : type === 'visit' ? 'PageView'
+    : null;
+
+  if (metaEventName && metaUserData) {
+    trackMetaCapiEvent({
+      eventName: metaEventName,
+      eventId,
+      userData: metaUserData,
+      customData: metadata as Record<string, unknown> | undefined,
+    }).catch(() => {});
   }
 }
 
@@ -80,9 +108,10 @@ export async function trackVisit(data: {
   }
 }
 
-export async function trackProductView(productId: string) {
+export async function trackProductView(productId: string, eventId?: string, metaUserData?: MetaCapiUserData) {
+  if (!eventId) eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   if (!process.env.DATABASE_URL) return;
-  await trackEvent('product_view', { productId });
+  await trackEvent('product_view', { productId }, eventId, metaUserData);
 
   try {
     await prisma.productView.create({
@@ -96,6 +125,8 @@ export async function trackProductView(productId: string) {
 }
 
 export async function createOrder(orderData: CreateOrderInput) {
+  const parsed = createOrderSchema.parse(orderData);
+
   if (!process.env.DATABASE_URL) {
     return { success: true, orderId: `local-${Date.now()}` };
   }
@@ -103,24 +134,24 @@ export async function createOrder(orderData: CreateOrderInput) {
   try {
     const order = await prisma.order.create({
       data: {
-        customerName: orderData.name,
-        customerPhone: orderData.phone,
-        cep: orderData.cep,
-        street: orderData.street,
-        number: orderData.number,
-        complement: orderData.complement,
-        neighborhood: orderData.neighborhood,
-        city: orderData.city,
-        state: orderData.state,
-        paymentMethod: orderData.paymentMethod,
-        deliveryMethod: orderData.deliveryMethod || 'DELIVERY',
-        observations: orderData.observations,
-        subtotal: orderData.subtotal,
-        deliveryFee: orderData.deliveryFee,
-        discount: orderData.discount,
-        total: orderData.total,
+        customerName: parsed.name,
+        customerPhone: parsed.phone,
+        cep: parsed.cep,
+        street: parsed.street,
+        number: parsed.number,
+        complement: parsed.complement,
+        neighborhood: parsed.neighborhood,
+        city: parsed.city,
+        state: parsed.state,
+        paymentMethod: parsed.paymentMethod,
+        deliveryMethod: parsed.deliveryMethod || 'DELIVERY',
+        observations: parsed.observations,
+        subtotal: parsed.subtotal,
+        deliveryFee: parsed.deliveryFee,
+        discount: parsed.discount,
+        total: parsed.total,
         items: {
-          create: orderData.items.map((item) => {
+          create: parsed.items.map((item) => {
             const selectedAddonIds = item.selectedAddons ?? [];
             const addonsTotal = selectedAddonIds.reduce((acc, addonId) => {
               const addon = item.addons?.find((a) => a.id === addonId);
@@ -147,11 +178,16 @@ export async function createOrder(orderData: CreateOrderInput) {
       orderId: order.id,
       total: order.total,
       deliveryMethod: order.deliveryMethod,
-      items: orderData.items.length,
-    });
-    if (orderData.couponCode) {
+      items: parsed.items.length,
+      content_ids: parsed.items.map(i => i.id),
+      content_type: 'product',
+      currency: 'BRL',
+      value: order.total,
+      contents: parsed.items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price })),
+    }, orderData.eventId, orderData.metaUserData);
+    if (parsed.couponCode) {
       await prisma.coupon.update({
-        where: { code: orderData.couponCode },
+        where: { code: parsed.couponCode },
         data: { usedCount: { increment: 1 } },
       }).catch((e) => console.error('Failed to increment coupon usage:', e));
     }
@@ -218,13 +254,19 @@ export async function getDashboardMetrics() {
         take: 5
     });
 
-    // Buscar nomes dos produtos
-    const topProducts = await Promise.all(topProductsRaw.map(async (item) => {
-        const product = await prisma.product.findUnique({
-            where: { id: item.productId },
-            select: { name: true }
+    // Buscar nomes dos produtos (single query instead of N+1)
+    const topProductIds = topProductsRaw.map(item => item.productId);
+    const topProductsMap = new Map<string, string>();
+    if (topProductIds.length > 0) {
+        const products = await prisma.product.findMany({
+            where: { id: { in: topProductIds } },
+            select: { id: true, name: true }
         });
-        return { name: product?.name || 'Desconhecido', views: item._count.productId };
+        products.forEach(p => topProductsMap.set(p.id, p.name));
+    }
+    const topProducts = topProductsRaw.map(item => ({
+        name: topProductsMap.get(item.productId) || 'Desconhecido',
+        views: item._count.productId
     }));
 
     // Origem do Tráfego

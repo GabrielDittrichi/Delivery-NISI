@@ -1,16 +1,21 @@
 'use client'
 import { Category, Product } from '@/lib/db';
-import { addProduct, deleteProduct, updateProduct } from '@/lib/actions';
-import { useMemo, useState } from 'react';
-import { Trash2, Plus, Edit2, X, ImageOff, Search, ShoppingBag, Sparkles, ToggleLeft } from 'lucide-react';
+import { addProduct, deleteProduct, duplicateProduct, updateProduct } from '@/lib/actions';
+import { useMemo, useRef, useState, useEffect } from 'react';
+import { Trash2, Plus, Edit2, Copy, X, ImageOff, Search, ShoppingBag, Sparkles, ToggleLeft } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import Image from 'next/image';
 import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
+import ConfirmDialog from './ConfirmDialog';
+import { toast } from 'sonner';
+import type { ConfirmConfig } from './ConfirmDialog';
 
 export default function ProductManager({ categories, products }: { categories: Category[], products: Product[] }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -71,7 +76,19 @@ export default function ProductManager({ categories, products }: { categories: C
     });
     setIsEditing(false);
     setEditingId(null);
+    setSaveError('');
   }
+
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isEditing]);
 
   const handleEdit = (product: Product) => {
     setFormData({
@@ -99,6 +116,7 @@ export default function ProductManager({ categories, products }: { categories: C
     });
     setEditingId(product.id);
     setIsEditing(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   }
 
   const handleAddFlavor = () => {
@@ -140,14 +158,19 @@ export default function ProductManager({ categories, products }: { categories: C
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSaveError('');
     try {
         if (editingId) {
             await updateProduct({ ...formData, id: editingId });
+            toast.success('Produto atualizado com sucesso!');
         } else {
             await addProduct(formData);
+            toast.success('Produto criado com sucesso!');
         }
         resetForm();
     } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Erro desconhecido ao salvar';
+        setSaveError(msg);
         console.error('Error saving product:', error);
     } finally {
         setLoading(false);
@@ -155,9 +178,19 @@ export default function ProductManager({ categories, products }: { categories: C
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza?')) {
+    const product = products.find(p => p.id === id);
+    setConfirm({
+      title: 'Excluir produto',
+      message: product
+        ? `Tem certeza que deseja excluir "${product.name}"? Esta acao nao pode ser desfeita.`
+        : 'Tem certeza que deseja excluir este produto?',
+      destructive: true,
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
         await deleteProduct(id);
-    }
+        toast.success('Produto excluido com sucesso!');
+      },
+    });
   }
 
   const handleImageUploaded = (url: string) => {
@@ -171,30 +204,30 @@ export default function ProductManager({ categories, products }: { categories: C
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Cardapio"
+        eyebrow="Cardápio"
         title="Produtos"
         description="Gerencie fotos, categorias, sabores, adicionais e visibilidade dos itens."
-        action={!isEditing && (
-          <button onClick={() => setIsEditing(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800">
+        action={
+          <button onClick={() => { resetForm(); setIsEditing(true); }} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800">
             <Plus size={18} /> Novo produto
           </button>
-        )}
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <AdminStatCard label="Cadastrados" value={products.length} detail="itens no cardapio" icon={ToggleLeft} />
         <AdminStatCard label="Ativos" value={activeCount} detail="visiveis no site" icon={Sparkles} />
         <AdminStatCard label="Destaques" value={featuredCount} detail="prioridade na vitrine" icon={Sparkles} />
-        <AdminStatCard label="Sem foto" value={noImageCount} detail="precisam de midia" icon={ImageOff} />
+        <AdminStatCard label="Sem foto" value={noImageCount} detail="precisam de foto" icon={ImageOff} />
       </div>
 
       {isEditing && (
         <AdminSection
           title={editingId ? 'Editar produto' : 'Novo produto'}
-          description="Organize as informacoes em secoes curtas para evitar erros no cadastro."
+          description="Organize as informações em seções curtas para evitar erros no cadastro."
           action={<button onClick={resetForm} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"><X size={20} /></button>}
         >
-        <div>
+        <div ref={formRef}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-gray-800">Imagem do produto</h3>
             </div>
@@ -205,7 +238,7 @@ export default function ProductManager({ categories, products }: { categories: C
 
             <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
                 <h3 className="font-semibold text-gray-900">Galeria do produto</h3>
-                <p className="mt-1 text-sm text-gray-600">Adicione ate tres fotos extras e um video para aparecer na pagina do produto.</p>
+                <p className="mt-1 text-sm text-gray-600">Adicione até três fotos extras e um vídeo para aparecer na página do produto.</p>
                 <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div>
                         <ImageUpload title="Foto extra 1" onUploadComplete={(url) => handleMediaUploaded('galleryImage1', url)} />
@@ -359,7 +392,7 @@ export default function ProductManager({ categories, products }: { categories: C
                           onChange={(e) => setNewFlavor(e.target.value)}
                           placeholder="Digite um sabor"
                           className="flex-1 rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFlavor())}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFlavor())}
                         />
                         <button
                           type="button"
@@ -415,7 +448,7 @@ export default function ProductManager({ categories, products }: { categories: C
                           className="h-4 w-4 text-emerald-700 focus:ring-emerald-600 border-gray-300 rounded"
                         />
                         <label htmlFor="allowMultipleAddons" className="ml-2 block text-sm text-gray-900">
-                          O cliente pode selecionar mais de um adicional?
+                          Cliente pode escolher vários adicionais no mesmo item?
                         </label>
                       </div>
 
@@ -429,7 +462,7 @@ export default function ProductManager({ categories, products }: { categories: C
                             onChange={(e) => setNewAddon(e.target.value)}
                             placeholder="Ex: Bacon Extra"
                             className="w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAddon())}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAddon())}
                           />
                         </div>
                         <div className="w-full md:w-32">
@@ -440,7 +473,7 @@ export default function ProductManager({ categories, products }: { categories: C
                             onChange={(e) => setNewAddonPrice(e.target.value)}
                             placeholder="0,00"
                             className="w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAddon())}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAddon())}
                           />
                         </div>
                         <button
@@ -504,6 +537,11 @@ export default function ProductManager({ categories, products }: { categories: C
                     </div>
                 </div>
 
+                {saveError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">
+                    {saveError}
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-2">
                     <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-600 hover:text-gray-800">Cancelar</button>
                     <button type="submit" disabled={loading} className="bg-emerald-700 text-white px-4 py-2 rounded-md hover:bg-emerald-800">
@@ -569,7 +607,7 @@ export default function ProductManager({ categories, products }: { categories: C
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
                                     {product.imageUrl && (
 	                                        <div className="relative w-12 h-12 rounded bg-gray-100 overflow-hidden shrink-0">
-	                                            <Image src={product.imageUrl} alt={product.name} fill sizes="48px" className="object-cover" unoptimized />
+	                                            <Image src={product.imageUrl} alt={product.name} fill sizes="48px" className="object-cover" />
 	                                        </div>
                                     )}
                                     <div>
@@ -587,6 +625,9 @@ export default function ProductManager({ categories, products }: { categories: C
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                    <button onClick={() => { duplicateProduct(product.id); toast.success('Produto duplicado!'); }} className="p-2 text-gray-500 hover:bg-emerald-50 rounded" title="Duplicar">
+                                        <Copy size={18} />
+                                    </button>
                                     <button onClick={() => handleEdit(product)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded">
                                         <Edit2 size={18} />
                                     </button>
@@ -606,6 +647,8 @@ export default function ProductManager({ categories, products }: { categories: C
         )}
       </div>
       </AdminSection>
+
+      <ConfirmDialog config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

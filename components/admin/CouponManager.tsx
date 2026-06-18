@@ -2,6 +2,9 @@
 import { useState, useEffect } from 'react';
 import { BadgePercent, CalendarX, RefreshCw, ToggleLeft, Trash2, Plus, Tag } from 'lucide-react';
 import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
+import ConfirmDialog from './ConfirmDialog';
+import { toast } from 'sonner';
+import type { ConfirmConfig } from './ConfirmDialog';
 
 interface Coupon {
   id: string;
@@ -27,7 +30,7 @@ export default function CouponManager() {
     expiresAt: '',
   });
   const [creating, setCreating] = useState(false);
-  const [message, setMessage] = useState('');
+  const [confirm, setConfirm] = useState<ConfirmConfig | null>(null);
 
   const activeCoupons = coupons.filter((coupon) => coupon.isActive).length;
   const inactiveCoupons = coupons.filter((coupon) => !coupon.isActive).length;
@@ -56,7 +59,6 @@ export default function CouponManager() {
     if (!newCoupon.code || !newCoupon.value) return;
 
     setCreating(true);
-    setMessage('');
 
     try {
       const res = await fetch('/api/coupons', {
@@ -68,33 +70,41 @@ export default function CouponManager() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.message || 'Erro ao criar cupom');
+        toast.error(data.message || 'Erro ao criar cupom');
       } else {
         setCoupons([data, ...coupons]);
         setNewCoupon({ code: '', type: 'PERCENTAGE', value: '', minOrder: '', usageLimit: '', expiresAt: '' });
-        setMessage('Cupom criado com sucesso!');
-        setTimeout(() => setMessage(''), 3000);
+        toast.success('Cupom criado com sucesso!');
       }
     } catch {
-      setMessage('Erro ao criar cupom');
+      toast.error('Erro ao criar cupom');
     } finally {
       setCreating(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este cupom?')) return;
-
-    try {
-      const res = await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setCoupons(coupons.filter((c) => c.id !== id));
-      } else {
-        alert('Erro ao excluir cupom');
-      }
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
-    }
+    const coupon = coupons.find(c => c.id === id);
+    setConfirm({
+      title: 'Excluir cupom',
+      message: `Tem certeza que deseja excluir o cupom "${coupon?.code}"?`,
+      destructive: true,
+      confirmLabel: 'Excluir',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setCoupons(coupons.filter((c) => c.id !== id));
+            toast.success('Cupom excluido com sucesso!');
+          } else {
+            toast.error('Erro ao excluir cupom');
+          }
+        } catch (error) {
+          console.error('Error deleting coupon:', error);
+          toast.error('Erro ao excluir cupom');
+        }
+      },
+    });
   };
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
@@ -107,16 +117,20 @@ export default function CouponManager() {
         
         if (res.ok) {
             setCoupons(coupons.map(c => c.id === id ? { ...c, isActive: !currentStatus } : c));
+            toast.success(`Cupom ${!currentStatus ? 'ativado' : 'desativado'} com sucesso!`);
+        } else {
+            toast.error('Erro ao alterar status do cupom');
         }
     } catch (error) {
         console.error('Error toggling coupon:', error);
+        toast.error('Erro ao alterar status do cupom');
     }
   };
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Promocoes"
+        eyebrow="Promoções"
         title="Cupons"
         description="Crie e acompanhe regras promocionais para campanhas e clientes recorrentes."
         action={
@@ -190,7 +204,7 @@ export default function CouponManager() {
         </div>
         
         <div className="flex justify-between items-center">
-            <p className="text-sm text-green-600 font-medium">{message}</p>
+            <div />
             <button
                 type="submit"
                 disabled={creating || !newCoupon.code}
@@ -268,6 +282,8 @@ export default function CouponManager() {
         </div>
       )}
       </AdminSection>
+
+      <ConfirmDialog config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

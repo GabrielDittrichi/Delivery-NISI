@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 
 function unauthorized() {
   return new NextResponse('Unauthorized', {
@@ -39,7 +40,11 @@ export function proxy(req: NextRequest) {
     if (idx === -1) return unauthorized();
     const u = decoded.slice(0, idx);
     const p = decoded.slice(idx + 1);
-    if (!users.includes(u) || p !== pass) return unauthorized();
+    if (!users.includes(u)) return unauthorized();
+    const passBuf = Buffer.from(p);
+    const expectedBuf = Buffer.from(pass);
+    const match = passBuf.length === expectedBuf.length && timingSafeEqual(passBuf, expectedBuf);
+    if (!match) return unauthorized();
   } catch {
     return unauthorized();
   }
@@ -48,5 +53,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/coupons/:path*', '/api/upload'],
+  matcher: ['/admin', '/admin/:path*', '/api/coupons/:path*', '/api/upload'],
 };

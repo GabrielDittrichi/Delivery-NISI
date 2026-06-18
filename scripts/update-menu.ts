@@ -283,6 +283,14 @@ const sampleProducts = [
 ];
 
 async function main() {
+  console.log('');
+  console.log('⚠️  ATENCAO: Este script vai DELETAR todos os produtos e recria-los.');
+  console.log('⚠️  Os pedidos existentes serao preservados (OrderItems),');
+  console.log('⚠️  mas os vinculos com os produtos antigos serao perdidos.');
+  console.log('');
+  console.log('Pressione Ctrl+C para cancelar ou aguarde 5 segundos para continuar...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
+
   console.log('Deletando produtos antigos...');
   await prisma.product.deleteMany({});
   

@@ -12,7 +12,7 @@ html {
   --border: rgba(17, 24, 39, 0.10);
 
   /* Brand (set at runtime from Restaurant.primaryColor via ThemeProvider) */
-  --brand: #ea1d2c;
+  --brand: #16803C;
   --brand-contrast: #ffffff;
 }
 

@@ -19,6 +19,8 @@ export async function GET() {
     database,
     service: 'espaco-vida-saudavel-nisi',
     latencyMs: Date.now() - startedAt,
+  }, {
+    headers: { 'Cache-Control': 'no-store' },
   });
 }
 

@@ -5,6 +5,7 @@ import { Upload, X, Loader2, Check } from 'lucide-react';
 import Cropper, { Area } from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 interface ImageUploadProps {
   value?: string;
@@ -45,7 +46,7 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
       setImageSrc(null); // Reset crop mode
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Erro ao fazer upload da imagem');
+      toast.error('Erro ao fazer upload da imagem');
     } finally {
       setUploading(false);
     }
@@ -77,7 +78,7 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
       }
     } catch (e) {
       console.error(e);
-      alert('Erro ao cortar imagem');
+      toast.error('Erro ao cortar imagem');
       setUploading(false);
     }
   };
@@ -161,7 +162,7 @@ export default function ImageUpload({ value, onChange, label, enableCrop = false
             fill
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover"
-            unoptimized
+           
           />
         </div>
       ) : (

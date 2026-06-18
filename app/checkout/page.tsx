@@ -8,6 +8,7 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { trackMarketingEvent } from '@/lib/tracking';
+import { trackPixelAndCapi } from '@/lib/track-unified';
 
 type PaymentMethod = 'PIX' | 'MONEY' | 'CREDIT' | 'DEBIT';
 type DeliveryMethod = 'DELIVERY' | 'PICKUP';
@@ -195,12 +196,17 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
-    trackMarketingEvent('InitiateCheckout', {
-      currency: 'BRL',
-      value: Math.max(0, cartTotal - discount),
-      num_items: items.reduce((count, item) => count + item.quantity, 0),
-    });
+    try {
+      const checkoutEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+      trackPixelAndCapi('InitiateCheckout', {
+        content_ids: items.map(i => i.id),
+        contents: items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price })),
+        currency: 'BRL',
+        value: Math.max(0, cartTotal - discount),
+        num_items: items.reduce((count, item) => count + item.quantity, 0),
+      }, checkoutEventId);
     
+    const orderEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
     const orderData = {
         name: formData.name,
         phone: formData.phone,
@@ -219,25 +225,29 @@ export default function CheckoutPage() {
         discount: discount,
         total: Math.max(0, cartTotal - discount),
         couponCode: appliedCoupon?.code,
-        items: items
+        items: items,
+        eventId: orderEventId,
+        metaUserData: { clientUserAgent: navigator.userAgent, phone: formData.phone },
     };
 
     // Salvar no banco
     const result = await createOrder(orderData);
     
     if (result && result.success) {
-        trackMarketingEvent('Purchase', {
+        trackPixelAndCapi('Purchase', {
           transaction_id: result.orderId,
+          content_ids: items.map(i => i.id),
+          content_name: items.map(i => i.name).join(', '),
+          content_type: 'product',
           currency: 'BRL',
           value: orderData.total,
           coupon: appliedCoupon?.code,
-          items: items.map((item) => ({
-            item_id: item.id,
-            item_name: item.name,
-            price: item.price,
+          contents: items.map((item) => ({
+            id: item.id,
             quantity: item.quantity,
+            item_price: item.price,
           })),
-        });
+        }, orderEventId);
 
         // Gerar mensagem para WhatsApp
         const addressText = deliveryMethod === 'DELIVERY' 
@@ -301,7 +311,12 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
     } else {
         setSubmitError('Erro ao processar pedido. Tente novamente.');
     }
-    setIsSubmitting(false);
+    } catch (error) {
+      setSubmitError('Erro ao processar pedido. Tente novamente.');
+      console.error('Checkout error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (items.length === 0) {
@@ -382,24 +397,32 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                     Dados Pessoais
                 </h2>
                 <div className="space-y-3">
+                  <div>
+                    <label htmlFor="checkout-name" className="sr-only">Nome Completo</label>
 	                    <input 
 	                        type="text" 
 	                        name="name"
+	                        id="checkout-name"
 	                        placeholder="Nome Completo"
 	                        required
 	                        className={inputClass}
 	                        value={formData.name}
 	                        onChange={handleInputChange}
 	                    />
+                    </div>
+                    <div>
+                    <label htmlFor="checkout-phone" className="sr-only">Telefone / WhatsApp</label>
 	                    <input 
 	                        type="tel" 
 	                        name="phone"
+	                        id="checkout-phone"
 	                        placeholder="Telefone / WhatsApp"
 	                        required
 	                        className={inputClass}
 	                        value={formData.phone}
 	                        onChange={handleInputChange}
 	                    />
+                    </div>
                 </div>
             </motion.div>
 
@@ -569,7 +592,14 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                       <button
                         key={option.id}
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, paymentMethod: option.id }))}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, paymentMethod: option.id }));
+                          trackPixelAndCapi('AddPaymentInfo', {
+                            content_type: 'product',
+                            currency: 'BRL',
+                            value: Math.max(0, cartTotal - discount),
+                          });
+                        }}
                         className={clsx(
                           optionClass,
                           "flex flex-col items-center gap-2",

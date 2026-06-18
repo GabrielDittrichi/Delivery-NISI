@@ -9,9 +9,6 @@ function getImageHostFromEnv(envValue?: string) {
 }
 
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   reactCompiler: true,
   images: (() => {
     const host = getImageHostFromEnv(process.env.R2_PUBLIC_URL);

@@ -45,7 +45,6 @@ export default function MarketingTags() {
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '${metaPixelId}');
-            fbq('track', 'PageView');
           `}
         </Script>
       )}

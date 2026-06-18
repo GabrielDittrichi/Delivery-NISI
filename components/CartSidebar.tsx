@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-export default function CartSidebar() {
+export default function CartSidebar({ minOrder = 0 }: { minOrder?: number }) {
   const { 
     isCartOpen, 
     setIsCartOpen, 
@@ -17,7 +17,7 @@ export default function CartSidebar() {
     cartTotal 
   } = useCart();
 
-  const shouldSuggestMore = items.length > 0 && cartTotal < 30;
+  const shouldSuggestMore = items.length > 0 && minOrder > 0 && cartTotal < minOrder;
 
   // Prevent scrolling when cart is open
   useEffect(() => {
@@ -77,8 +77,8 @@ export default function CartSidebar() {
                     </button>
                   </div>
                 ) : (
-                  items.map((item, index) => (
-                    <div key={`${item.id}-${item.selectedFlavor || ''}-${JSON.stringify(item.selectedAddons || [])}-${index}`} className="flex gap-4 py-4 border-b last:border-0">
+                  items.map((item) => (
+                    <div key={`${item.id}-${item.selectedFlavor || ''}-${(item.selectedAddons || []).sort().join(',')}`} className="flex gap-4 py-4 border-b last:border-0">
                        {item.imageUrl && (
                          <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
                            <Image
@@ -87,7 +87,7 @@ export default function CartSidebar() {
                              width={80}
                              height={80}
                              className="w-full h-full object-cover"
-                             unoptimized
+                            
                            />
                          </div>
                        )}

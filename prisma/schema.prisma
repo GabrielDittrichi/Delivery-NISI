@@ -56,6 +56,10 @@ model Product {
   orderItems          OrderItem[]
   category            Category      @relation(fields: [categoryId], references: [id])
   views               ProductView[]
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
 }
 
 model Flavor {
@@ -109,6 +113,10 @@ model Order {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]
+
+  @@index([customerPhone])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model OrderItem {

@@ -4,28 +4,42 @@ import { updateRestaurant } from '@/lib/actions';
 import { useState } from 'react';
 import ImageUpload from '@/components/ImageUpload';
 import { AdminPageHeader, AdminSection } from './AdminPrimitives';
+import { toast } from 'sonner';
 
 export default function RestaurantForm({ restaurant }: { restaurant: Restaurant }) {
   const [formData, setFormData] = useState(restaurant);
   const [loading, setLoading] = useState(false);
+
+  const formatWhatsapp = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 13);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  const handleWhatsappChange = (value: string) => {
+    const raw = value.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, whatsapp: raw }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await updateRestaurant(formData);
     setLoading(false);
-    alert('Salvo com sucesso!');
+    toast.success('Configuracoes salvas com sucesso!');
   };
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Configuracoes"
+        eyebrow="Configurações"
         title="Restaurante"
-        description="Controle identidade, atendimento, midia e informacoes exibidas no cardapio."
+        description="Controle identidade, atendimento, mídia e informações exibidas no cardápio."
       />
       <form onSubmit={handleSubmit} className="space-y-4">
-        <AdminSection title="Identidade" description="Essas informacoes aparecem no topo do site e no cardapio presencial.">
+        <AdminSection title="Identidade" description="Essas informações aparecem no topo do site e no cardápio presencial.">
         <div>
           <label className="block text-sm font-medium text-gray-700">Nome</label>
           <input
@@ -51,12 +65,13 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
           <div>
             <label className="block text-sm font-medium text-gray-700">WhatsApp</label>
             <input
-              type="text"
-              value={formData.whatsapp || ''}
-              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+              type="tel"
+              value={formatWhatsapp(formData.whatsapp || '')}
+              onChange={(e) => handleWhatsappChange(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-              placeholder="5531999999999"
+              placeholder="(31) 99999-9999"
             />
+            <p className="mt-1 text-xs text-gray-500">Número com DDI, DDD e 9 dígitos. Ex: 5531999999999</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Horário de funcionamento</label>
@@ -89,7 +104,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
         </div>
         </AdminSection>
 
-        <AdminSection title="Midia" description="Atualize logo e banner mantendo imagens claras e bem enquadradas.">
+        <AdminSection title="Mídia" description="Atualize logo e banner mantendo imagens claras e bem enquadradas.">
          <div>
           <ImageUpload
             label="Banner do Restaurante"
@@ -110,7 +125,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
         </div>
         </AdminSection>
 
-        <AdminSection title="Operacao" description="Ajustes usados nos resumos e mensagens do cardapio.">
+        <AdminSection title="Operação" description="Ajustes usados nos resumos e mensagens do cardápio.">
         <div>
           <label className="block text-sm font-medium text-gray-700">Cor Primária</label>
           <div className="flex items-center gap-2">

@@ -29,6 +29,7 @@ import type { Order } from './OrdersManager';
 import type { Customer } from './CustomersManager';
 
 const COLORS = ['#16803C', '#0F5130', '#86EFAC', '#A7F3D0', '#D1FAE5'];
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export type DashboardMetrics = {
   revenue: { total: number; monthly: number };
@@ -72,16 +73,14 @@ export default function DashboardOverview({
   const productsWithoutImage = products.filter((product) => !product.imageUrl).length;
   const inactiveProducts = products.filter((product) => product.isActive === false).length;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  const formatCurrency = (value: number) => currencyFormatter.format(value);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         eyebrow="Painel"
-        title="Resumo da operacao"
-        description="Acompanhe pedidos, receita, clientes e pontos que precisam de atencao antes do atendimento ficar corrido."
+        title="Resumo da operação"
+        description="Acompanhe pedidos, receita, clientes e pontos que precisam de atenção antes do atendimento ficar corrido."
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -91,7 +90,7 @@ export default function DashboardOverview({
         <AdminStatCard label="Clientes recorrentes" value={recurringCustomers} detail={`${customers.length} clientes`} icon={Users} />
       </div>
 
-      <AdminSection title="Acoes rapidas" description="Atalhos para as rotinas que mais movimentam o cardapio.">
+      <AdminSection title="Ações rápidas" description="Atalhos para as rotinas que mais movimentam o cardápio.">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <button onClick={() => onNavigate('orders')} className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-left transition-colors hover:bg-emerald-100">
             <CalendarClock className="mb-3 text-emerald-700" size={20} />
@@ -117,7 +116,7 @@ export default function DashboardOverview({
       </AdminSection>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <AdminSection title="Faturamento dos ultimos 7 dias">
+        <AdminSection title="Faturamento dos últimos 7 dias">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={metrics.dailyRevenue}>
@@ -152,7 +151,7 @@ export default function DashboardOverview({
         </AdminSection>
       </div>
 
-      <AdminSection title="Funil de conversao" description="Leitura rapida do caminho ate o pedido.">
+      <AdminSection title="Funil de conversão" description="Leitura rápida do caminho até o pedido.">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
             <MousePointerClick className="mb-2 text-emerald-700" size={18} />
@@ -168,7 +167,7 @@ export default function DashboardOverview({
             <p className="mt-1 text-2xl font-bold text-gray-950">{metrics.funnel.orderCreated}</p>
           </div>
           <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
-            <p className="text-sm text-gray-500">Conv. checkout</p>
+            <p className="text-sm text-gray-500">Taxa de conversão</p>
             <p className="mt-1 text-2xl font-bold text-gray-950">{(metrics.funnel.checkoutConversion * 100).toFixed(0)}%</p>
           </div>
         </div>
@@ -198,7 +197,7 @@ export default function DashboardOverview({
           </div>
         </AdminSection>
 
-        <AdminSection title="Alertas operacionais" description="Itens que merecem revisao antes de divulgar o cardapio.">
+        <AdminSection title="Alertas operacionais" description="Itens que merecem revisão antes de divulgar o cardápio.">
           <div className="space-y-3">
             <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
               <span className="text-sm font-medium text-gray-700">Pedidos pendentes</span>

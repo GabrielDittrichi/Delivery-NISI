@@ -22,7 +22,7 @@ export default function Header({ restaurant }: { restaurant: Restaurant }) {
               priority
               sizes="(max-width: 768px) 100vw, 768px"
               className="object-cover"
-              unoptimized
+             
             />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/5 via-transparent to-white/85" />
@@ -36,7 +36,7 @@ export default function Header({ restaurant }: { restaurant: Restaurant }) {
                width={96}
                height={96}
                className="w-full h-full object-cover"
-               unoptimized
+              
              />
            ) : (
              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">Logo</div>
