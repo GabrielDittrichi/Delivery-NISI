@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowDown, Clock, HeartPulse, Leaf, Star, Truck, BadgeDollarSign } from 'lucide-react';
 import Image from 'next/image';
 
-export default function Header({ restaurant }: { restaurant: Restaurant }) {
+export default function Header({ restaurant, simplified = false }: { restaurant: Restaurant; simplified?: boolean }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
@@ -57,17 +57,19 @@ export default function Header({ restaurant }: { restaurant: Restaurant }) {
                 <HeartPulse size={14} className="opacity-70" />
                 Atendimento para seus objetivos
               </span>
-              {restaurant.deliveryTime && (
+              {!simplified && restaurant.deliveryTime && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border bg-white/80 backdrop-blur" style={{ borderColor: 'var(--border)' }}>
                   <Clock size={14} className="opacity-70" />
                   {restaurant.deliveryTime}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border bg-white/80 backdrop-blur" style={{ borderColor: 'var(--border)' }}>
-                <Truck size={14} className="opacity-70" />
-                {restaurant.deliveryFee > 0 ? `Entrega R$ ${restaurant.deliveryFee.toFixed(2).replace('.', ',')}` : 'Entrega a combinar'}
-              </span>
-              {restaurant.minOrder > 0 && (
+              {!simplified && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border bg-white/80 backdrop-blur" style={{ borderColor: 'var(--border)' }}>
+                  <Truck size={14} className="opacity-70" />
+                  {restaurant.deliveryFee > 0 ? `Entrega R$ ${restaurant.deliveryFee.toFixed(2).replace('.', ',')}` : 'Entrega a combinar'}
+                </span>
+              )}
+              {!simplified && restaurant.minOrder > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border bg-white/80 backdrop-blur" style={{ borderColor: 'var(--border)' }}>
                   <BadgeDollarSign size={14} className="opacity-70" />
                   Min. R$ {restaurant.minOrder.toFixed(2).replace('.', ',')}
@@ -81,23 +83,25 @@ export default function Header({ restaurant }: { restaurant: Restaurant }) {
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <a
-                href="#destaques"
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-transform active:scale-[0.98]"
-                style={{ backgroundColor: 'var(--brand)' }}
-              >
-                Ver destaques
-                <ArrowDown size={16} />
-              </a>
-              <a
-                href="#cardapio"
-                className="inline-flex h-10 items-center justify-center rounded-lg border bg-white px-4 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-50"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                Montar meu pedido
-              </a>
-            </div>
+            {!simplified && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="#destaques"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-transform active:scale-[0.98]"
+                  style={{ backgroundColor: 'var(--brand)' }}
+                >
+                  Ver destaques
+                  <ArrowDown size={16} />
+                </a>
+                <a
+                  href="#cardapio"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border bg-white px-4 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-50"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  Montar meu pedido
+                </a>
+              </div>
+            )}
         </div>
       </div>
     </motion.div>

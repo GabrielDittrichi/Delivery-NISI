@@ -4,11 +4,8 @@ import { Product } from '@/lib/db';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Check,
   HeartPulse,
   Leaf,
-  Minus,
-  Plus,
   Play,
   ShieldCheck,
   Sparkles,
@@ -17,8 +14,6 @@ import {
   ZoomIn,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useCart } from '@/context/CartContext';
-import { useRouter } from 'next/navigation';
 import { trackProductView } from '@/lib/analytics';
 import { trackPixelAndCapi } from '@/lib/track-unified';
 import Image from 'next/image';
@@ -45,9 +40,6 @@ export default function ProductDetails({
   primaryColor: string;
   relatedProducts?: Product[];
 }) {
-  const [quantity, setQuantity] = useState(1);
-  const [selectedFlavor, setSelectedFlavor] = useState<string>('');
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [isImageOpen, setIsImageOpen] = useState(false);
   const mediaItems = useMemo(() => [
     product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Video do produto' } : null,
@@ -57,10 +49,8 @@ export default function ProductDetails({
     product.galleryImage3 ? { type: 'image' as const, url: product.galleryImage3, label: 'Foto 4' } : null,
   ].filter(Boolean) as { type: 'image' | 'video'; url: string; label: string }[], [product.galleryImage1, product.galleryImage2, product.galleryImage3, product.imageUrl, product.videoUrl]);
   const [selectedMediaUrl, setSelectedMediaUrl] = useState(mediaItems[0]?.url || '');
-  const { addToCart } = useCart();
-  const router = useRouter();
   const meta = productMeta(product);
-  const requiresFlavor = product.flavors.length > 0;
+  const flavorList = product.flavors.map(f => f.name).join(', ');
 
   useEffect(() => {
     const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
@@ -87,37 +77,17 @@ export default function ProductDetails({
     };
   }, [isImageOpen]);
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity, selectedFlavor, selectedAddons);
-    router.push('/');
-  };
-
-  const handleAddonToggle = (addonId: string) => {
-    if (product.allowMultipleAddons) {
-      setSelectedAddons((prev) => (prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]));
-      return;
-    }
-    setSelectedAddons((prev) => (prev.includes(addonId) ? [] : [addonId]));
-  };
-
-  const addonsTotal = selectedAddons.reduce((total, addonId) => {
-    const addon = product.addons.find((item) => item.id === addonId);
-    return total + (addon?.price || 0);
-  }, 0);
-  const currentPrice = product.price + addonsTotal;
-  const total = currentPrice * quantity;
-  const canAdd = !requiresFlavor || Boolean(selectedFlavor);
   const selectedMedia = mediaItems.find((item) => item.url === selectedMediaUrl) || mediaItems[0];
 
   return (
-    <div className="min-h-screen bg-[#f8fbf8] pb-32 text-gray-950">
+    <div className="min-h-screen bg-[#f8fbf8] pb-20 text-gray-950">
       <div className="sticky top-0 z-20 border-b border-emerald-100 bg-white/92 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-emerald-50" aria-label="Voltar">
             <ArrowLeft size={22} color={primaryColor} />
           </Link>
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Monte seu pedido</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Cardapio NISI</p>
             <p className="text-sm font-semibold text-gray-700">Espaco Vida Saudavel NISI</p>
           </div>
           <div className="h-10 w-10" />
@@ -150,7 +120,6 @@ export default function ProductDetails({
                       priority
                       sizes="(max-width: 1024px) 100vw, 58vw"
                       className="object-contain"
-                     
                     />
                     <span className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/90 text-emerald-800 shadow-sm transition-colors group-hover:bg-emerald-50">
                       <ZoomIn size={20} />
@@ -206,7 +175,7 @@ export default function ProductDetails({
                 <p className="mt-3 max-w-3xl text-base leading-7 text-gray-600">{product.description}</p>
               </div>
               <div className="rounded-lg bg-emerald-50 px-4 py-3 text-left sm:text-right">
-                <p className="text-xs font-semibold text-emerald-700">A partir de</p>
+                <p className="text-xs font-semibold text-emerald-700">Preco</p>
                 <p className="text-2xl font-bold text-emerald-800">{formatCurrency(product.price)}</p>
               </div>
             </div>
@@ -219,6 +188,13 @@ export default function ProductDetails({
                     <p className="mt-1 text-lg font-bold text-gray-950">{item.value}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {flavorList && (
+              <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/50 p-4">
+                <p className="text-xs font-medium text-gray-500">Sabores disponiveis</p>
+                <p className="mt-1 text-base font-semibold text-gray-950">{flavorList}</p>
               </div>
             )}
           </div>
@@ -245,83 +221,39 @@ export default function ProductDetails({
           <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-950">Personalize</h2>
-                <p className="mt-1 text-sm text-gray-600">Escolha sabores e adicionais disponiveis.</p>
+                <h2 className="text-lg font-bold text-gray-950">Informacoes</h2>
+                <p className="mt-1 text-sm text-gray-600">Detalhes e sabores disponiveis.</p>
               </div>
               <Sparkles className="text-emerald-700" size={22} />
             </div>
 
             {product.flavors.length > 0 && (
-              <div className="mb-6">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-gray-950">Sabor</h3>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">Obrigatorio</span>
-                </div>
-                <div className="grid gap-2">
-                  {product.flavors.map((flavor) => {
-                    const selected = selectedFlavor === flavor.id;
-                    return (
-                      <button
-                        key={flavor.id}
-                        type="button"
-                        onClick={() => setSelectedFlavor(flavor.id)}
-                        className={`flex items-center justify-between rounded-lg border p-3 text-left transition-colors ${
-                          selected ? 'border-emerald-700 bg-emerald-50 text-emerald-950' : 'border-gray-200 bg-white hover:bg-emerald-50'
-                        }`}
-                      >
-                        <span className="font-medium">{flavor.name}</span>
-                        {selected && <Check size={18} className="text-emerald-700" />}
-                      </button>
-                    );
-                  })}
+              <div className="mb-4">
+                <h3 className="mb-2 font-semibold text-gray-950">Sabores</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.flavors.map((flavor) => (
+                    <span key={flavor.id} className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800">
+                      {flavor.name}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
             {product.addons.length > 0 && (
               <div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-gray-950">Adicionais</h3>
-                  <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-600">
-                    {product.allowMultipleAddons ? 'Multipla escolha' : 'Escolha unica'}
-                  </span>
-                </div>
-                <div className="grid gap-2">
-                  {product.addons.map((addon) => {
-                    const selected = selectedAddons.includes(addon.id);
-                    return (
-                      <button
-                        key={addon.id}
-                        type="button"
-                        onClick={() => handleAddonToggle(addon.id)}
-                        className={`rounded-lg border p-3 text-left transition-colors ${
-                          selected ? 'border-emerald-700 bg-emerald-50' : 'border-gray-200 bg-white hover:bg-emerald-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-medium text-gray-950">{addon.name}</span>
-                          <span className="text-sm font-bold text-emerald-800">
-                            {addon.price > 0 ? `+ ${formatCurrency(addon.price)}` : 'Incluso'}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs leading-5 text-gray-500">
-                          {addon.name.toLowerCase().includes('prote')
-                            ? 'Mais proteina no seu pedido.'
-                            : addon.name.toLowerCase().includes('fibra')
-                              ? 'Apoio para sua rotina de fibras.'
-                              : 'Complemento para personalizar sua escolha.'}
-                        </p>
-                      </button>
-                    );
-                  })}
+                <h3 className="mb-2 font-semibold text-gray-950">Adicionais</h3>
+                <div className="space-y-2">
+                  {product.addons.map((addon) => (
+                    <div key={addon.id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-white p-3">
+                      <span className="font-medium text-gray-950">{addon.name}</span>
+                      <span className="text-sm font-bold text-emerald-800">
+                        {addon.price > 0 ? `+ ${formatCurrency(addon.price)}` : 'Incluso'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
-
-            {!canAdd && (
-              <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
-                Escolha um sabor para continuar.
-              </p>
             )}
           </section>
 
@@ -362,30 +294,6 @@ export default function ProductDetails({
           </div>
         </div>
       )}
-
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-emerald-100 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(15,81,48,0.10)] backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
-          <div className="flex h-12 items-center rounded-lg border border-emerald-100 bg-white">
-            <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="flex h-full w-11 items-center justify-center rounded-l-lg text-gray-500 hover:bg-emerald-50" aria-label="Diminuir quantidade">
-              <Minus size={18} />
-            </button>
-            <span className="w-9 text-center font-bold text-gray-950">{quantity}</span>
-            <button onClick={() => setQuantity((value) => value + 1)} className="flex h-full w-11 items-center justify-center rounded-r-lg text-emerald-700 hover:bg-emerald-50" aria-label="Aumentar quantidade">
-              <Plus size={18} />
-            </button>
-          </div>
-
-          <button
-            onClick={handleAddToCart}
-            disabled={!canAdd}
-            className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <span className="hidden sm:inline">Adicionar ao pedido</span>
-            <span className="sm:hidden">Adicionar</span>
-            <span className="rounded-md bg-white/18 px-2 py-1 text-sm">{formatCurrency(total)}</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

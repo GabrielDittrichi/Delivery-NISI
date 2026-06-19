@@ -1,7 +1,7 @@
 import { Product } from '@/lib/db';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Leaf, Plus } from 'lucide-react';
+import { Leaf } from 'lucide-react';
 import ProductBadges from './ProductBadges';
 
 export default function ProductItem({ product }: { product: Product }) {
@@ -17,9 +17,6 @@ export default function ProductItem({ product }: { product: Product }) {
                     <div className="mt-3 flex items-center justify-between">
                         <span className="font-semibold" style={{ color: 'var(--brand)' }}>
                             R$ {product.price.toFixed(2).replace('.', ',')}
-                        </span>
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition-transform group-hover:scale-105" style={{ backgroundColor: 'var(--brand)' }}>
-                            <Plus size={16} />
                         </span>
                     </div>
                 </div>
