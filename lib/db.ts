@@ -105,7 +105,7 @@ export const sampleProducts: Product[] = [
     categoryId: "salgados",
     name: "Empada",
     slug: "empada",
-    description: "Empada de frango com opcao pequena ou grande.",
+    description: "Empada de frango zero % farinha, com opcao pequena ou grande.",
     price: 4,
     imageUrl: null,
     proteins: 7,
