@@ -39,7 +39,16 @@ type CreateOrderInput = {
   metaUserData?: MetaCapiUserData;
 };
 
-type AnalyticsEventType = 'visit' | 'product_view' | 'add_to_cart' | 'checkout_started' | 'order_created';
+type AnalyticsEventType =
+  | 'visit'
+  | 'product_view'
+  | 'search'
+  | 'add_to_cart'
+  | 'checkout_started'
+  | 'add_payment_info'
+  | 'coupon_applied'
+  | 'whatsapp_click'
+  | 'order_created';
 
 export async function trackEvent(
   type: AnalyticsEventType,
@@ -63,8 +72,12 @@ export async function trackEvent(
   // Send to Meta CAPI
   const metaEventName = type === 'add_to_cart' ? 'AddToCart'
     : type === 'checkout_started' ? 'InitiateCheckout'
+    : type === 'add_payment_info' ? 'AddPaymentInfo'
+    : type === 'coupon_applied' ? 'CouponApplied'
+    : type === 'whatsapp_click' ? 'WhatsAppClick'
     : type === 'order_created' ? 'Purchase'
     : type === 'product_view' ? 'ViewContent'
+    : type === 'search' ? 'Search'
     : type === 'visit' ? 'PageView'
     : null;
 
@@ -176,14 +189,25 @@ export async function createOrder(orderData: CreateOrderInput) {
     });
     await trackEvent('order_created', {
       orderId: order.id,
+      transaction_id: order.id,
       total: order.total,
       deliveryMethod: order.deliveryMethod,
+      payment_method: order.paymentMethod,
+      coupon: parsed.couponCode,
       items: parsed.items.length,
       content_ids: parsed.items.map(i => i.id),
       content_type: 'product',
       currency: 'BRL',
       value: order.total,
-      contents: parsed.items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price })),
+      num_items: parsed.items.reduce((count, item) => count + item.quantity, 0),
+      contents: parsed.items.map((item) => {
+        const selectedAddonIds = item.selectedAddons ?? [];
+        const addonsTotal = selectedAddonIds.reduce((acc, addonId) => {
+          const addon = item.addons?.find((a) => a.id === addonId);
+          return acc + (addon?.price ?? 0);
+        }, 0);
+        return { id: item.id, quantity: item.quantity, item_price: item.price + addonsTotal };
+      }),
     }, orderData.eventId, orderData.metaUserData);
     if (parsed.couponCode) {
       await prisma.coupon.update({

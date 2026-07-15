@@ -11,14 +11,28 @@ declare global {
 const eventMap: Record<string, string> = {
   PageView: 'page_view',
   ViewContent: 'view_item',
+  Search: 'search',
   AddToCart: 'add_to_cart',
   InitiateCheckout: 'begin_checkout',
+  AddPaymentInfo: 'add_payment_info',
   Purchase: 'purchase',
   ApplyCoupon: 'select_promotion',
+  CouponApplied: 'select_promotion',
 };
+
+const metaStandardEvents = new Set([
+  'PageView',
+  'ViewContent',
+  'Search',
+  'AddToCart',
+  'InitiateCheckout',
+  'AddPaymentInfo',
+  'Purchase',
+]);
 
 export function trackMarketingEvent(eventName: string, payload: TrackingPayload = {}) {
   if (typeof window === 'undefined') return;
+  const { eventID, ...eventPayload } = payload;
 
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({
@@ -27,10 +41,12 @@ export function trackMarketingEvent(eventName: string, payload: TrackingPayload 
   });
 
   if (window.gtag) {
-    window.gtag('event', eventMap[eventName] || eventName, payload);
+    window.gtag('event', eventMap[eventName] || eventName, eventPayload);
   }
 
   if (window.fbq) {
-    window.fbq('track', eventName, payload);
+    const method = metaStandardEvents.has(eventName) ? 'track' : 'trackCustom';
+    const options = typeof eventID === 'string' ? { eventID } : undefined;
+    window.fbq(method, eventName, eventPayload, options);
   }
 }

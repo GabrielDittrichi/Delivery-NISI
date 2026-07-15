@@ -2,6 +2,7 @@
 import { Category } from '@/lib/db';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { trackPixelAndCapi } from '@/lib/track-unified';
 
 export default function CategoryNav({ categories, primaryColor }: { categories: Category[], primaryColor: string }) {
   const [activeId, setActiveId] = useState<string>(categories[0]?.id || '');
@@ -44,6 +45,11 @@ export default function CategoryNav({ categories, primaryColor }: { categories: 
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setActiveId(id);
+      const category = categories.find((cat) => cat.id === id);
+      trackPixelAndCapi('CategoryClick', {
+        category_id: id,
+        category_name: category?.name,
+      });
     }
   };
 

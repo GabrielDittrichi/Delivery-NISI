@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Store, Bike, User, ClipboardCheck } from 'lucide-react';
@@ -9,6 +9,7 @@ import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { trackMarketingEvent } from '@/lib/tracking';
 import { trackPixelAndCapi } from '@/lib/track-unified';
+import { getMetaUserData } from '@/lib/meta-client';
 
 type PaymentMethod = 'PIX' | 'MONEY' | 'CREDIT' | 'DEBIT';
 type DeliveryMethod = 'DELIVERY' | 'PICKUP';
@@ -24,9 +25,17 @@ function money(value: number) {
   return `R$ ${value.toFixed(2).replace('.', ',')}`;
 }
 
+function getItemAddonsTotal(item: {
+  selectedAddons?: string[];
+  addons?: { id: string; price: number }[];
+}) {
+  return item.selectedAddons?.reduce((acc, id) => acc + (item.addons?.find(a => a.id === id)?.price || 0), 0) || 0;
+}
+
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart();
   const router = useRouter();
+  const checkoutStartedRef = useRef(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -55,20 +64,28 @@ export default function CheckoutPage() {
   const [cepError, setCepError] = useState('');
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0 || checkoutStartedRef.current) return;
+    checkoutStartedRef.current = true;
+    const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    const metadata = {
+      content_ids: items.map(i => i.id),
+      content_type: 'product',
+      contents: items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price + getItemAddonsTotal(i) })),
+      currency: 'BRL',
+      value: cartTotal,
+      num_items: items.reduce((count, item) => count + item.quantity, 0),
+    };
     fetch('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         type: 'checkout_started',
-        metadata: {
-          items: items.length,
-          total: cartTotal,
-        },
+        metadata,
       }),
       keepalive: true,
     }).catch(() => {});
-  }, [cartTotal, items.length]);
+    trackPixelAndCapi('InitiateCheckout', metadata, eventId);
+  }, [cartTotal, items]);
 
   const formatCep = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 8);
@@ -120,11 +137,20 @@ export default function CheckoutPage() {
         
         setDiscount(discountValue);
         setCouponMessage({ type: 'success', text: `Cupom ${data.code} aplicado com sucesso!` });
-        trackMarketingEvent('ApplyCoupon', {
+        const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+        const metadata = {
           coupon: data.code,
           discount: discountValue,
           currency: 'BRL',
-        });
+          value: Math.max(0, cartTotal - discountValue),
+        };
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'coupon_applied', metadata }),
+          keepalive: true,
+        }).catch(() => {});
+        trackPixelAndCapi('CouponApplied', metadata, eventId);
       }
     } catch {
       setCouponMessage({ type: 'error', text: 'Erro ao validar cupom' });
@@ -197,16 +223,12 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
-      const checkoutEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-      trackPixelAndCapi('InitiateCheckout', {
-        content_ids: items.map(i => i.id),
-        contents: items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price })),
-        currency: 'BRL',
-        value: Math.max(0, cartTotal - discount),
-        num_items: items.reduce((count, item) => count + item.quantity, 0),
-      }, checkoutEventId);
-    
     const orderEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    const orderItems = items.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      item_price: item.price + getItemAddonsTotal(item),
+    }));
     const orderData = {
         name: formData.name,
         phone: formData.phone,
@@ -227,14 +249,14 @@ export default function CheckoutPage() {
         couponCode: appliedCoupon?.code,
         items: items,
         eventId: orderEventId,
-        metaUserData: { clientUserAgent: navigator.userAgent, phone: formData.phone },
+        metaUserData: { ...getMetaUserData(), phone: formData.phone },
     };
 
     // Salvar no banco
     const result = await createOrder(orderData);
     
     if (result && result.success) {
-        trackPixelAndCapi('Purchase', {
+        trackMarketingEvent('Purchase', {
           transaction_id: result.orderId,
           content_ids: items.map(i => i.id),
           content_name: items.map(i => i.name).join(', '),
@@ -242,12 +264,10 @@ export default function CheckoutPage() {
           currency: 'BRL',
           value: orderData.total,
           coupon: appliedCoupon?.code,
-          contents: items.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-            item_price: item.price,
-          })),
-        }, orderEventId);
+          contents: orderItems,
+          num_items: items.reduce((count, item) => count + item.quantity, 0),
+          eventID: orderEventId,
+        });
 
         // Gerar mensagem para WhatsApp
         const addressText = deliveryMethod === 'DELIVERY' 
@@ -304,6 +324,22 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
 
         const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5599999999999';
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+        const whatsappEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+        const whatsappMetadata = {
+          transaction_id: result.orderId,
+          currency: 'BRL',
+          value: orderData.total,
+          content_ids: items.map(i => i.id),
+          contents: orderItems,
+          num_items: items.reduce((count, item) => count + item.quantity, 0),
+        };
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'whatsapp_click', metadata: whatsappMetadata }),
+          keepalive: true,
+        }).catch(() => {});
+        trackPixelAndCapi('WhatsAppClick', whatsappMetadata, whatsappEventId, { phone: formData.phone });
         
         clearCart();
         window.open(whatsappUrl, '_blank');
@@ -594,11 +630,21 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
                         type="button"
                         onClick={() => {
                           setFormData(prev => ({ ...prev, paymentMethod: option.id }));
-                          trackPixelAndCapi('AddPaymentInfo', {
+                          const metadata = {
+                            content_ids: items.map(i => i.id),
                             content_type: 'product',
+                            contents: items.map(i => ({ id: i.id, quantity: i.quantity, item_price: i.price + getItemAddonsTotal(i) })),
                             currency: 'BRL',
                             value: Math.max(0, cartTotal - discount),
-                          });
+                            payment_method: option.id,
+                          };
+                          fetch('/api/events', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ type: 'add_payment_info', metadata }),
+                            keepalive: true,
+                          }).catch(() => {});
+                          trackPixelAndCapi('AddPaymentInfo', metadata);
                         }}
                         className={clsx(
                           optionClass,

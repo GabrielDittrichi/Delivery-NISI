@@ -4,7 +4,7 @@ import { trackMetaCapiEvent, parseMetaCookies, getClientIp, generateEventId } fr
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { eventName, eventId, customData } = body;
+    const { eventName, eventId, customData, userData } = body;
 
     if (!eventName) {
       return NextResponse.json({ message: 'eventName obrigatório' }, { status: 400 });
@@ -21,6 +21,8 @@ export async function POST(req: Request) {
         clientUserAgent: req.headers.get('user-agent') || undefined,
         fbc: cookieData.fbc,
         fbp: cookieData.fbp,
+        phone: typeof userData?.phone === 'string' ? userData.phone : undefined,
+        email: typeof userData?.email === 'string' ? userData.email : undefined,
       },
       customData,
     });

@@ -5,6 +5,7 @@ export function trackPixelAndCapi(
   eventName: string,
   customData?: Record<string, unknown>,
   eventId?: string,
+  userData?: Record<string, unknown>,
 ) {
   const id = eventId || generateEventId();
 
@@ -18,6 +19,7 @@ export function trackPixelAndCapi(
     body: JSON.stringify({
       eventName,
       eventId: id,
+      userData,
       customData: {
         ...customData,
         eventID: undefined, // remove eventID duplicado

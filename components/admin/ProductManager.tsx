@@ -10,6 +10,8 @@ import ConfirmDialog from './ConfirmDialog';
 import { toast } from 'sonner';
 import type { ConfirmConfig } from './ConfirmDialog';
 
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export default function ProductManager({ categories, products }: { categories: Category[], products: Product[] }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -228,62 +230,11 @@ export default function ProductManager({ categories, products }: { categories: C
           action={<button onClick={resetForm} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"><X size={20} /></button>}
         >
         <div ref={formRef}>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-800">Imagem do produto</h3>
-            </div>
-            
-            <div className="mb-4">
-                <ImageUpload onUploadComplete={handleImageUploaded} />
-            </div>
-
-            <div className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
-                <h3 className="font-semibold text-gray-900">Galeria do produto</h3>
-                <p className="mt-1 text-sm text-gray-600">Adicione até três fotos extras e um vídeo para aparecer na página do produto.</p>
-                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <div>
-                        <ImageUpload title="Foto extra 1" onUploadComplete={(url) => handleMediaUploaded('galleryImage1', url)} />
-                        <input
-                            type="url"
-                            value={formData.galleryImage1}
-                            onChange={(e) => setFormData({ ...formData, galleryImage1: e.target.value })}
-                            placeholder="URL da foto extra 1"
-                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
-                        />
-                    </div>
-                    <div>
-                        <ImageUpload title="Foto extra 2" onUploadComplete={(url) => handleMediaUploaded('galleryImage2', url)} />
-                        <input
-                            type="url"
-                            value={formData.galleryImage2}
-                            onChange={(e) => setFormData({ ...formData, galleryImage2: e.target.value })}
-                            placeholder="URL da foto extra 2"
-                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
-                        />
-                    </div>
-                    <div>
-                        <ImageUpload title="Foto extra 3" onUploadComplete={(url) => handleMediaUploaded('galleryImage3', url)} />
-                        <input
-                            type="url"
-                            value={formData.galleryImage3}
-                            onChange={(e) => setFormData({ ...formData, galleryImage3: e.target.value })}
-                            placeholder="URL da foto extra 3"
-                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
-                        />
-                    </div>
-                    <div>
-                        <ImageUpload title="Video do produto" accept="video/*" onUploadComplete={(url) => handleMediaUploaded('videoUrl', url)} />
-                        <input
-                            type="url"
-                            value={formData.videoUrl}
-                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                            placeholder="URL do video"
-                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
-                        />
-                    </div>
-                </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                  <h3 className="font-semibold text-gray-900">Informações principais</h3>
+                  <p className="mt-1 text-sm text-gray-600">Preencha o essencial do produto antes de ajustar mídia e opções.</p>
+                </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Categoria</label>
                     <select
@@ -490,7 +441,7 @@ export default function ProductManager({ categories, products }: { categories: C
                           {formData.addons.map((addon, index) => (
                             <li key={index} className="flex justify-between items-center bg-white p-2 rounded border shadow-sm">
                               <span className="text-gray-800">
-                                {addon.name} - <span className="text-green-600 font-medium">R$ {(addon.price || 0).toFixed(2)}</span>
+                                {addon.name} - <span className="text-green-600 font-medium">{currencyFormatter.format(addon.price || 0)}</span>
                               </span>
                               <button
                                 type="button"
@@ -536,6 +487,66 @@ export default function ProductManager({ categories, products }: { categories: C
                       />
                     </div>
                 </div>
+
+                <details className="rounded-lg border border-emerald-100 bg-white p-4" open={!editingId}>
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-900">
+                    Mídia e galeria
+                  </summary>
+                  <p className="mt-2 text-sm text-gray-600">Adicione a foto principal, fotos extras e vídeo depois que os dados do produto estiverem definidos.</p>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <h3 className="mb-3 font-semibold text-gray-800">Imagem do produto</h3>
+                      <ImageUpload onUploadComplete={handleImageUploaded} />
+                    </div>
+
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                      <h3 className="font-semibold text-gray-900">Galeria do produto</h3>
+                      <p className="mt-1 text-sm text-gray-600">Adicione até três fotos extras e um vídeo para aparecer na página do produto.</p>
+                      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div>
+                          <ImageUpload title="Foto extra 1" onUploadComplete={(url) => handleMediaUploaded('galleryImage1', url)} />
+                          <input
+                            type="url"
+                            value={formData.galleryImage1}
+                            onChange={(e) => setFormData({ ...formData, galleryImage1: e.target.value })}
+                            placeholder="URL da foto extra 1"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                          />
+                        </div>
+                        <div>
+                          <ImageUpload title="Foto extra 2" onUploadComplete={(url) => handleMediaUploaded('galleryImage2', url)} />
+                          <input
+                            type="url"
+                            value={formData.galleryImage2}
+                            onChange={(e) => setFormData({ ...formData, galleryImage2: e.target.value })}
+                            placeholder="URL da foto extra 2"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                          />
+                        </div>
+                        <div>
+                          <ImageUpload title="Foto extra 3" onUploadComplete={(url) => handleMediaUploaded('galleryImage3', url)} />
+                          <input
+                            type="url"
+                            value={formData.galleryImage3}
+                            onChange={(e) => setFormData({ ...formData, galleryImage3: e.target.value })}
+                            placeholder="URL da foto extra 3"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                          />
+                        </div>
+                        <div>
+                          <ImageUpload title="Video do produto" accept="video/*" onUploadComplete={(url) => handleMediaUploaded('videoUrl', url)} />
+                          <input
+                            type="url"
+                            value={formData.videoUrl}
+                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                            placeholder="URL do video"
+                            className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
 
                 {saveError && (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">
@@ -613,7 +624,7 @@ export default function ProductManager({ categories, products }: { categories: C
                                     <div>
                                         <h4 className="font-semibold text-gray-800">{product.name}</h4>
                                         <div className="mt-1 flex flex-wrap gap-1.5">
-                                          <p className="text-sm text-gray-500">R$ {(product.price || 0).toFixed(2)}</p>
+                                          <p className="text-sm text-gray-500">{currencyFormatter.format(product.price || 0)}</p>
                                           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${product.isActive === false ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-emerald-700'}`}>
                                             {product.isActive === false ? 'Inativo' : 'Ativo'}
                                           </span>
@@ -625,13 +636,13 @@ export default function ProductManager({ categories, products }: { categories: C
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                    <button onClick={() => { duplicateProduct(product.id); toast.success('Produto duplicado!'); }} className="p-2 text-gray-500 hover:bg-emerald-50 rounded" title="Duplicar">
+                                    <button onClick={() => { duplicateProduct(product.id); toast.success('Produto duplicado!'); }} className="p-2 text-gray-500 hover:bg-emerald-50 rounded" title={`Duplicar ${product.name}`} aria-label={`Duplicar ${product.name}`}>
                                         <Copy size={18} />
                                     </button>
-                                    <button onClick={() => handleEdit(product)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded">
+                                    <button onClick={() => handleEdit(product)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded" title={`Editar ${product.name}`} aria-label={`Editar ${product.name}`}>
                                         <Edit2 size={18} />
                                     </button>
-                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded">
+                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-emerald-700 hover:bg-emerald-50 rounded" title={`Excluir ${product.name}`} aria-label={`Excluir ${product.name}`}>
                                         <Trash2 size={18} />
                                     </button>
                                 </div>
@@ -647,6 +658,16 @@ export default function ProductManager({ categories, products }: { categories: C
         )}
       </div>
       </AdminSection>
+
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={() => { resetForm(); setIsEditing(true); }}
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center justify-center gap-2 rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 md:hidden"
+        >
+          <Plus size={18} /> Novo produto
+        </button>
+      )}
 
       <ConfirmDialog config={confirm} onClose={() => setConfirm(null)} />
     </div>

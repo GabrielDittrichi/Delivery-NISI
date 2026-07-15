@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { trackVisit } from '@/lib/analytics';
-import { trackMarketingEvent } from '@/lib/tracking';
+import { trackPixelAndCapi } from '@/lib/track-unified';
 
 export default function AnalyticsTracker() {
   useEffect(() => {
@@ -10,8 +10,9 @@ export default function AnalyticsTracker() {
     // if (process.env.NODE_ENV === 'development') return;
 
     const track = async () => {
-      trackMarketingEvent('PageView', {
+      trackPixelAndCapi('PageView', {
         page_path: window.location.pathname,
+        page_title: document.title,
       });
 
       // Prefer server-side tracking (no external client dependency).

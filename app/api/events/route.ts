@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { trackEvent } from '@/lib/analytics';
 
-const allowedEvents = new Set(['add_to_cart', 'checkout_started']);
+const allowedEvents = new Set([
+  'add_to_cart',
+  'checkout_started',
+  'add_payment_info',
+  'coupon_applied',
+  'search',
+  'whatsapp_click',
+]);
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +24,10 @@ export async function POST(req: Request) {
         ? body.metadata
         : undefined;
 
-    await trackEvent(type as 'add_to_cart' | 'checkout_started', metadata);
+    await trackEvent(
+      type as 'add_to_cart' | 'checkout_started' | 'add_payment_info' | 'coupon_applied' | 'search' | 'whatsapp_click',
+      metadata
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -25,4 +35,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
-

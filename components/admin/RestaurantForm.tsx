@@ -12,9 +12,15 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
 
   const formatWhatsapp = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 13);
+    if (digits.startsWith('55')) {
+      const area = digits.slice(2, 4);
+      const number = digits.slice(4);
+      if (!area) return '+55';
+      if (number.length <= 5) return `+55 (${area}) ${number}`;
+      return `+55 (${area}) ${number.slice(0, 5)}-${number.slice(5, 9)}`;
+    }
     if (digits.length <= 2) return digits;
     if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
   };
 
@@ -69,9 +75,9 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
               value={formatWhatsapp(formData.whatsapp || '')}
               onChange={(e) => handleWhatsappChange(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-gray-900"
-              placeholder="(31) 99999-9999"
+              placeholder="+55 (31) 99999-9999"
             />
-            <p className="mt-1 text-xs text-gray-500">Número com DDI, DDD e 9 dígitos. Ex: 5531999999999</p>
+            <p className="mt-1 text-xs text-gray-500">Salve com DDI, DDD e 9 dígitos. Ex: 5531999999999</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Horário de funcionamento</label>

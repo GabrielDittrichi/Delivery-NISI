@@ -71,7 +71,7 @@ export default function AdminDashboard({
       case 'orders':
         return <OrdersManager initialOrders={initialOrders || []} />;
       case 'customers':
-        return <CustomersManager initialCustomers={initialCustomers || []} />;
+        return <CustomersManager initialCustomers={initialCustomers || []} initialOrders={initialOrders || []} />;
       case 'products':
         return <ProductManager categories={initialData.categories} products={initialData.products} />;
       case 'categories':

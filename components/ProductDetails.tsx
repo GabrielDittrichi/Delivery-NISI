@@ -6,8 +6,12 @@ import {
   ArrowLeft,
   HeartPulse,
   Leaf,
+  MessageCircle,
+  Minus,
   Play,
+  Plus,
   ShieldCheck,
+  ShoppingCart,
   Sparkles,
   Truck,
   X,
@@ -17,6 +21,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { trackProductView } from '@/lib/analytics';
 import { trackPixelAndCapi } from '@/lib/track-unified';
 import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -40,6 +45,7 @@ export default function ProductDetails({
   primaryColor: string;
   relatedProducts?: Product[];
 }) {
+  const { addToCart } = useCart();
   const [isImageOpen, setIsImageOpen] = useState(false);
   const mediaItems = useMemo(() => [
     product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Video do produto' } : null,
@@ -49,20 +55,25 @@ export default function ProductDetails({
     product.galleryImage3 ? { type: 'image' as const, url: product.galleryImage3, label: 'Foto 4' } : null,
   ].filter(Boolean) as { type: 'image' | 'video'; url: string; label: string }[], [product.galleryImage1, product.galleryImage2, product.galleryImage3, product.imageUrl, product.videoUrl]);
   const [selectedMediaUrl, setSelectedMediaUrl] = useState(mediaItems[0]?.url || '');
+  const [quantity, setQuantity] = useState(1);
+  const [selectedFlavor, setSelectedFlavor] = useState<string | undefined>(product.flavors[0]?.id);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const meta = productMeta(product);
   const flavorList = product.flavors.map(f => f.name).join(', ');
 
   useEffect(() => {
     const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-    trackProductView(product.id, eventId, { clientUserAgent: navigator.userAgent });
+    trackProductView(product.id, eventId);
     trackPixelAndCapi('ViewContent', {
       content_ids: [product.id],
       content_name: product.name,
       content_type: 'product',
+      contents: [{ id: product.id, quantity: 1, item_price: product.price }],
       currency: 'BRL',
       value: product.price,
+      product_category: product.categoryId,
     }, eventId);
-  }, [product.id, product.name, product.price]);
+  }, [product.categoryId, product.id, product.name, product.price]);
 
   useEffect(() => {
     if (!isImageOpen) return;
@@ -78,9 +89,27 @@ export default function ProductDetails({
   }, [isImageOpen]);
 
   const selectedMedia = mediaItems.find((item) => item.url === selectedMediaUrl) || mediaItems[0];
+  const addonsTotal = selectedAddons.reduce((total, addonId) => {
+    const addon = product.addons.find((item) => item.id === addonId);
+    return total + (addon?.price || 0);
+  }, 0);
+  const unitPrice = product.price + addonsTotal;
+  const orderTotal = unitPrice * quantity;
+
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddons((current) => {
+      const isSelected = current.includes(addonId);
+      if (isSelected) return current.filter((id) => id !== addonId);
+      return product.allowMultipleAddons ? [...current, addonId] : [addonId];
+    });
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product, quantity, selectedFlavor, selectedAddons);
+  };
 
   return (
-    <div className="min-h-screen bg-[#f8fbf8] pb-20 text-gray-950">
+    <div className="min-h-screen bg-[#f8fbf8] pb-28 text-gray-950">
       <div className="sticky top-0 z-20 border-b border-emerald-100 bg-white/92 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-emerald-50" aria-label="Voltar">
@@ -199,6 +228,114 @@ export default function ProductDetails({
             )}
           </div>
 
+          <section id="montar-pedido" className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Montar pedido</p>
+                <h2 className="mt-1 text-xl font-bold text-gray-950">Escolha os detalhes</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600">
+                  Ajuste quantidade, sabores e adicionais antes de enviar para o atendimento.
+                </p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 px-4 py-3 text-left sm:text-right">
+                <p className="text-xs font-semibold text-emerald-700">Total do item</p>
+                <p className="text-2xl font-bold text-emerald-800">{formatCurrency(orderTotal)}</p>
+              </div>
+            </div>
+
+            {product.flavors.length > 0 && (
+              <div className="mb-5">
+                <h3 className="mb-2 text-sm font-bold text-gray-950">Sabor</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.flavors.map((flavor) => {
+                    const selected = selectedFlavor === flavor.id;
+                    return (
+                      <button
+                        key={flavor.id}
+                        type="button"
+                        onClick={() => setSelectedFlavor(flavor.id)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                          selected
+                            ? 'border-emerald-700 bg-emerald-700 text-white'
+                            : 'border-emerald-100 bg-white text-gray-700 hover:bg-emerald-50'
+                        }`}
+                      >
+                        {flavor.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {product.addons.length > 0 && (
+              <div className="mb-5">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-bold text-gray-950">Adicionais</h3>
+                  {!product.allowMultipleAddons && (
+                    <span className="text-xs font-medium text-gray-500">Escolha no máximo 1</span>
+                  )}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {product.addons.map((addon) => {
+                    const selected = selectedAddons.includes(addon.id);
+                    return (
+                      <button
+                        key={addon.id}
+                        type="button"
+                        onClick={() => toggleAddon(addon.id)}
+                        className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors ${
+                          selected
+                            ? 'border-emerald-700 bg-emerald-50 text-emerald-900'
+                            : 'border-emerald-100 bg-white text-gray-700 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <span className="font-semibold">{addon.name}</span>
+                        <span className="shrink-0 text-sm font-bold text-emerald-800">
+                          {addon.price > 0 ? `+ ${formatCurrency(addon.price)}` : 'Incluso'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-gray-950">Quantidade</h3>
+                <div className="inline-flex h-11 items-center overflow-hidden rounded-lg border border-emerald-100 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                    className="flex h-full w-11 items-center justify-center text-gray-500 transition-colors hover:bg-emerald-50"
+                    aria-label="Diminuir quantidade"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="w-12 text-center font-bold text-gray-950">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => current + 1)}
+                    className="flex h-full w-11 items-center justify-center text-emerald-800 transition-colors hover:bg-emerald-50"
+                    aria-label="Aumentar quantidade"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 active:scale-[0.99] sm:min-w-[230px]"
+              >
+                <ShoppingCart size={18} />
+                Adicionar ao pedido
+              </button>
+            </div>
+          </section>
+
           <div className="grid gap-3 md:grid-cols-3">
             {[
               { icon: ShieldCheck, title: 'Preparado no NISI', text: 'Pedido montado no atendimento.' },
@@ -283,6 +420,29 @@ export default function ProductDetails({
           )}
         </aside>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-emerald-100 bg-white/95 p-3 shadow-[0_-14px_45px_rgba(16,128,60,0.12)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-gray-500">Total do item</p>
+            <p className="text-lg font-bold text-emerald-800">{formatCurrency(orderTotal)}</p>
+          </div>
+          <a
+            href="#montar-pedido"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 text-sm font-bold text-emerald-800"
+          >
+            Opcoes
+          </a>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-bold text-white"
+          >
+            <MessageCircle size={17} />
+            Pedir
+          </button>
+        </div>
+      </div>
 
       {isImageOpen && selectedMedia?.type === 'image' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setIsImageOpen(false)}>

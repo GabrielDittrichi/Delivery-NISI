@@ -1,19 +1,6 @@
 'use client'
 
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import {
   AlertCircle,
   BadgePercent,
   CalendarClock,
@@ -30,6 +17,14 @@ import type { Customer } from './CustomersManager';
 
 const COLORS = ['#16803C', '#0F5130', '#86EFAC', '#A7F3D0', '#D1FAE5'];
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function ChartEmptyState({ label }: { label: string }) {
+  return (
+    <div className="flex h-72 items-center justify-center rounded-lg border border-dashed border-emerald-100 bg-emerald-50/40 px-6 text-center">
+      <p className="text-sm font-medium text-gray-500">{label}</p>
+    </div>
+  );
+}
 
 export type DashboardMetrics = {
   revenue: { total: number; monthly: number };
@@ -72,6 +67,10 @@ export default function DashboardOverview({
   const recurringCustomers = customers.filter((customer) => customer.ordersCount > 1).length;
   const productsWithoutImage = products.filter((product) => !product.imageUrl).length;
   const inactiveProducts = products.filter((product) => product.isActive === false).length;
+  const hasDailyRevenue = metrics.dailyRevenue.some((day) => day.total > 0);
+  const hasTrafficSources = metrics.trafficSources.some((source) => source.value > 0);
+  const maxDailyRevenue = Math.max(...metrics.dailyRevenue.map((day) => day.total), 1);
+  const totalTrafficSources = metrics.trafficSources.reduce((total, source) => total + source.value, 0);
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
 
@@ -117,37 +116,55 @@ export default function DashboardOverview({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <AdminSection title="Faturamento dos últimos 7 dias">
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.dailyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                  fontSize={12}
-                />
-                <YAxis fontSize={12} tickFormatter={(val) => `R$${val}`} />
-                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Faturamento']} labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')} />
-                <Bar dataKey="total" fill="#16803C" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasDailyRevenue ? (
+            <div className="flex h-72 items-end gap-3 rounded-lg border border-emerald-100 bg-white p-4">
+              {metrics.dailyRevenue.map((day) => {
+                const height = Math.max(8, (day.total / maxDailyRevenue) * 100);
+                return (
+                  <div key={day.date} className="flex h-full flex-1 flex-col justify-end gap-2">
+                    <div className="flex flex-1 items-end">
+                      <div
+                        className="w-full rounded-t bg-emerald-700"
+                        style={{ height: `${height}%` }}
+                        title={`${new Date(day.date).toLocaleDateString('pt-BR')}: ${formatCurrency(day.total)}`}
+                      />
+                    </div>
+                    <span className="text-center text-[11px] font-medium text-gray-500">
+                      {new Date(day.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <ChartEmptyState label="O faturamento aparece aqui depois dos primeiros pedidos pagos." />
+          )}
         </AdminSection>
 
         <AdminSection title="Origem dos acessos">
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={metrics.trafficSources} cx="50%" cy="50%" innerRadius={62} outerRadius={86} paddingAngle={5} dataKey="value">
-                  {metrics.trafficSources.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {hasTrafficSources ? (
+            <div className="flex h-72 flex-col justify-center gap-4 rounded-lg border border-emerald-100 bg-white p-4">
+              {metrics.trafficSources.map((source, index) => {
+                const percentage = totalTrafficSources > 0 ? (source.value / totalTrafficSources) * 100 : 0;
+                return (
+                  <div key={source.name}>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                        <span className="text-sm font-semibold text-gray-700">{source.name}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">{percentage.toFixed(0)}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-full rounded-full" style={{ width: `${percentage}%`, backgroundColor: COLORS[index % COLORS.length] }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <ChartEmptyState label="As origens de acesso serão exibidas quando houver visitas rastreadas." />
+          )}
         </AdminSection>
       </div>
 

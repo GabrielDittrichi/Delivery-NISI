@@ -1,5 +1,4 @@
 import { createHash } from 'crypto';
-import { generateEventId } from './event-id';
 
 const META_API_VERSION = 'v21.0';
 

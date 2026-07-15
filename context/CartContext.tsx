@@ -33,6 +33,13 @@ function trackClientEvent(type: 'add_to_cart', metadata?: Record<string, unknown
   }).catch(() => {});
 }
 
+function getSelectedAddonValue(product: Product, selectedAddons?: string[]) {
+  return (selectedAddons || []).reduce((sum, id) => {
+    const addon = product.addons?.find((item) => item.id === id);
+    return sum + (addon?.price || 0);
+  }, 0);
+}
+
 function sameSelection(
   itemAddons: string[] | undefined,
   targetAddons: string[] | undefined
@@ -109,10 +116,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [...prev, cartItem];
     });
 
-    const addonsValue = (selectedAddons || []).reduce((sum, id) => {
-      const a = product.addons?.find(a => a.id === id);
-      return sum + (a?.price || 0);
-    }, 0);
+    const addonsValue = getSelectedAddonValue(product, selectedAddons);
+    const itemPrice = product.price + addonsValue;
     const eventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
     trackClientEvent('add_to_cart', {
       productId: product.id,
@@ -120,13 +125,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       quantity,
       hasFlavor: Boolean(selectedFlavor),
       addons: selectedAddons?.length || 0,
+      value: itemPrice * quantity,
     });
     trackPixelAndCapi('AddToCart', {
       content_ids: [product.id],
       content_name: product.name,
       content_type: 'product',
+      contents: [{ id: product.id, quantity, item_price: itemPrice }],
       currency: 'BRL',
-      value: (product.price + addonsValue) * quantity,
+      value: itemPrice * quantity,
+      num_items: quantity,
+      selected_flavor: selectedFlavor,
+      selected_addons: selectedAddons,
     }, eventId);
     setIsCartOpen(true);
   };

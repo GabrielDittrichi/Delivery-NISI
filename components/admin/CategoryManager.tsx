@@ -90,13 +90,13 @@ export default function CategoryManager({ categories, products }: { categories: 
                       <p className="mt-1 text-xs text-gray-500">Posição {index + 1} no cardápio.</p>
                     </div>
                     <div className="flex items-center gap-1 self-end sm:self-auto">
-                      <button onClick={() => handleMove(cat.id, 'up')} disabled={index === 0} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title="Mover para cima">
+                      <button onClick={() => handleMove(cat.id, 'up')} disabled={index === 0} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title={`Mover ${cat.name} para cima`} aria-label={`Mover ${cat.name} para cima`}>
                         <ChevronUp size={20} />
                       </button>
-                      <button onClick={() => handleMove(cat.id, 'down')} disabled={index === categories.length - 1} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title="Mover para baixo">
+                      <button onClick={() => handleMove(cat.id, 'down')} disabled={index === categories.length - 1} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-30" title={`Mover ${cat.name} para baixo`} aria-label={`Mover ${cat.name} para baixo`}>
                         <ChevronDown size={20} />
                       </button>
-                      <button onClick={() => handleDelete(cat.id)} className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900" title="Excluir">
+                      <button onClick={() => handleDelete(cat.id)} className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900" title={`Excluir ${cat.name}`} aria-label={`Excluir ${cat.name}`}>
                         <Trash2 size={18} />
                       </button>
                     </div>

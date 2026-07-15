@@ -16,6 +16,7 @@ export default function ImageUpload({
   const [uploadedUrl, setUploadedUrl] = useState('');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const inputId = `upload-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -77,12 +78,23 @@ export default function ImageUpload({
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
             <input 
+                id={inputId}
                 type="file" 
                 accept={accept}
                 onChange={handleFileChange}
-                className="w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                className="sr-only"
             />
+            <label
+                htmlFor={inputId}
+                className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-emerald-50 sm:w-72"
+            >
+                <span className="truncate">{file ? file.name : 'Escolher arquivo'}</span>
+                <span className="shrink-0 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                    Procurar
+                </span>
+            </label>
             <button
+                type="button"
                 onClick={handleUpload}
                 disabled={uploading || !file}
                 className="w-full sm:w-auto bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-emerald-800 disabled:opacity-50 transition-colors"
