@@ -8,6 +8,8 @@ const allowedEvents = new Set([
   'coupon_applied',
   'search',
   'whatsapp_click',
+  'linktree_view',
+  'linktree_click',
 ]);
 
 export async function POST(req: Request) {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
         : undefined;
 
     await trackEvent(
-      type as 'add_to_cart' | 'checkout_started' | 'add_payment_info' | 'coupon_applied' | 'search' | 'whatsapp_click',
+      type as 'add_to_cart' | 'checkout_started' | 'add_payment_info' | 'coupon_applied' | 'search' | 'whatsapp_click' | 'linktree_view' | 'linktree_click',
       metadata
     );
 

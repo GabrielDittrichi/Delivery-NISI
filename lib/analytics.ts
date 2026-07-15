@@ -48,6 +48,8 @@ type AnalyticsEventType =
   | 'add_payment_info'
   | 'coupon_applied'
   | 'whatsapp_click'
+  | 'linktree_view'
+  | 'linktree_click'
   | 'order_created';
 
 export async function trackEvent(
@@ -75,6 +77,8 @@ export async function trackEvent(
     : type === 'add_payment_info' ? 'AddPaymentInfo'
     : type === 'coupon_applied' ? 'CouponApplied'
     : type === 'whatsapp_click' ? 'WhatsAppClick'
+    : type === 'linktree_view' ? 'LinktreeView'
+    : type === 'linktree_click' ? 'LinktreeClick'
     : type === 'order_created' ? 'Purchase'
     : type === 'product_view' ? 'ViewContent'
     : type === 'search' ? 'Search'
