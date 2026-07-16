@@ -73,10 +73,10 @@ export default function LinksHub({
           </div>
 
           <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Espaco Vida Saudavel</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Espaço Vida Saudável</p>
             <h1 className="mt-1 text-2xl font-bold tracking-normal text-gray-950">{restaurant.name}</h1>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-gray-600">
-              Acesse o cardapio digital, fale com o atendimento, entre na comunidade e deixe sua avaliacao.
+              Acesse o cardápio digital, fale com o atendimento, entre na comunidade e deixe sua avaliação.
             </p>
           </div>
         </div>

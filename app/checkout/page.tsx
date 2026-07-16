@@ -213,7 +213,7 @@ export default function CheckoutPage() {
     const phoneDigits = formData.phone.replace(/\D/g, '');
     const cepDigits = formData.cep.replace(/\D/g, '');
     if (phoneDigits.length < 10) {
-        setSubmitError('Informe um telefone valido para o atendimento.');
+        setSubmitError('Informe um telefone válido para o atendimento.');
         return;
     }
     if (deliveryMethod === 'DELIVERY' && (cepDigits.length !== 8 || !!cepError)) {
@@ -378,8 +378,8 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
   const paymentOptions = [
     { id: 'PIX' as PaymentMethod, label: 'PIX', icon: QrCode },
     { id: 'MONEY' as PaymentMethod, label: 'Dinheiro', icon: Banknote },
-    { id: 'CREDIT' as PaymentMethod, label: 'Credito', icon: CreditCard },
-    { id: 'DEBIT' as PaymentMethod, label: 'Debito', icon: CreditCard },
+    { id: 'CREDIT' as PaymentMethod, label: 'Crédito', icon: CreditCard },
+    { id: 'DEBIT' as PaymentMethod, label: 'Débito', icon: CreditCard },
   ];
 
   return (

@@ -54,7 +54,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
             <ArrowRight size={16} />
           </button>
           <a href="#cardapio" className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-emerald-800">
-            Cardapio
+            Cardápio
             <ArrowRight size={16} />
           </a>
         </div>

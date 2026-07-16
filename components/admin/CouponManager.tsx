@@ -113,7 +113,7 @@ export default function CouponManager() {
           const res = await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
           if (res.ok) {
             setCoupons(coupons.filter((c) => c.id !== id));
-            toast.success('Cupom excluido com sucesso!');
+            toast.success('Cupom excluído com sucesso!');
           } else {
             toast.error('Erro ao excluir cupom');
           }
@@ -311,7 +311,7 @@ export default function CouponManager() {
                     {coupons.length === 0 && (
                         <tr>
                             <td colSpan={6} className="p-8 text-center text-gray-500">
-                                <AdminEmptyState icon={BadgePercent} title="Nenhum cupom encontrado" description="Crie o primeiro cupom para campanhas do cardapio." />
+                                <AdminEmptyState icon={BadgePercent} title="Nenhum cupom encontrado" description="Crie o primeiro cupom para campanhas do cardápio." />
                             </td>
                         </tr>
                     )}

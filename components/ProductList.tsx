@@ -22,7 +22,7 @@ export default function ProductList({ categories, products }: { categories: Cate
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-xl font-bold text-gray-950">{cat.name}</h2>
                         <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                            {catProducts.length} opcoes
+                            {catProducts.length} opções
                         </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -34,7 +34,7 @@ export default function RestaurantForm({ restaurant }: { restaurant: Restaurant 
     setLoading(true);
     await updateRestaurant(formData);
     setLoading(false);
-    toast.success('Configuracoes salvas com sucesso!');
+    toast.success('Configurações salvas com sucesso!');
   };
 
   return (

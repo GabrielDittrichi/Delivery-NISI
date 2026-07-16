@@ -20,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Espaco Vida Saudavel NISI",
-  description: "Shakes, bebidas funcionais e opcoes proteicas para uma rotina mais leve.",
+  title: "Espaço Vida Saudável NISI",
+  description: "Shakes, bebidas funcionais e opções proteicas para uma rotina mais leve.",
 };
 
 export default async function RootLayout({

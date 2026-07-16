@@ -48,7 +48,7 @@ export default function ProductDetails({
   const { addToCart } = useCart();
   const [isImageOpen, setIsImageOpen] = useState(false);
   const mediaItems = useMemo(() => [
-    product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Video do produto' } : null,
+    product.videoUrl ? { type: 'video' as const, url: product.videoUrl, label: 'Vídeo do produto' } : null,
     product.imageUrl ? { type: 'image' as const, url: product.imageUrl, label: 'Foto principal' } : null,
     product.galleryImage1 ? { type: 'image' as const, url: product.galleryImage1, label: 'Foto 2' } : null,
     product.galleryImage2 ? { type: 'image' as const, url: product.galleryImage2, label: 'Foto 3' } : null,
@@ -116,8 +116,8 @@ export default function ProductDetails({
             <ArrowLeft size={22} color={primaryColor} />
           </Link>
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Cardapio NISI</p>
-            <p className="text-sm font-semibold text-gray-700">Espaco Vida Saudavel NISI</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Cardápio NISI</p>
+            <p className="text-sm font-semibold text-gray-700">Espaço Vida Saudável NISI</p>
           </div>
           <div className="h-10 w-10" />
         </div>
@@ -138,7 +138,7 @@ export default function ProductDetails({
                     playsInline
                     disablePictureInPicture
                     className="h-full w-full object-contain"
-                    aria-label={`Video de ${product.name}`}
+                    aria-label={`Vídeo de ${product.name}`}
                   />
                 ) : (
                   <button type="button" onClick={() => setIsImageOpen(true)} className="group relative block h-full w-full">
@@ -184,7 +184,7 @@ export default function ProductDetails({
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/22 backdrop-blur">
                             <Play size={18} fill="currentColor" />
                           </span>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.12em]">Video</span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.12em]">Vídeo</span>
                         </span>
                       </>
                     ) : (
@@ -199,12 +199,12 @@ export default function ProductDetails({
           <div className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Cardapio NISI</p>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Cardápio NISI</p>
                 <h1 className="mt-1 text-3xl font-bold tracking-normal text-gray-950">{product.name}</h1>
                 <p className="mt-3 max-w-3xl text-base leading-7 text-gray-600">{product.description}</p>
               </div>
               <div className="rounded-lg bg-emerald-50 px-4 py-3 text-left sm:text-right">
-                <p className="text-xs font-semibold text-emerald-700">Preco</p>
+                <p className="text-xs font-semibold text-emerald-700">Preço</p>
                 <p className="text-2xl font-bold text-emerald-800">{formatCurrency(product.price)}</p>
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function ProductDetails({
 
             {flavorList && (
               <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/50 p-4">
-                <p className="text-xs font-medium text-gray-500">Sabores disponiveis</p>
+                <p className="text-xs font-medium text-gray-500">Sabores disponíveis</p>
                 <p className="mt-1 text-base font-semibold text-gray-950">{flavorList}</p>
               </div>
             )}
@@ -339,8 +339,8 @@ export default function ProductDetails({
           <div className="grid gap-3 md:grid-cols-3">
             {[
               { icon: ShieldCheck, title: 'Preparado no NISI', text: 'Pedido montado no atendimento.' },
-              { icon: Truck, title: 'Entrega ou retirada', text: 'Voce escolhe no checkout.' },
-              { icon: HeartPulse, title: 'Rotina saudavel', text: 'Opcoes leves e proteicas.' },
+              { icon: Truck, title: 'Entrega ou retirada', text: 'Você escolhe no checkout.' },
+              { icon: HeartPulse, title: 'Rotina saudável', text: 'Opções leves e proteicas.' },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -358,8 +358,8 @@ export default function ProductDetails({
           <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-gray-950">Informacoes</h2>
-                <p className="mt-1 text-sm text-gray-600">Detalhes e sabores disponiveis.</p>
+                <h2 className="text-lg font-bold text-gray-950">Informações</h2>
+                <p className="mt-1 text-sm text-gray-600">Detalhes e sabores disponíveis.</p>
               </div>
               <Sparkles className="text-emerald-700" size={22} />
             </div>
@@ -396,7 +396,7 @@ export default function ProductDetails({
 
           {relatedProducts.length > 0 && (
             <section className="rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
-              <h2 className="font-bold text-gray-950">Tambem combina</h2>
+              <h2 className="font-bold text-gray-950">Também combina</h2>
               <div className="mt-3 space-y-3">
                 {relatedProducts.map((item) => (
                   <Link key={item.id} href={`/product/${item.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:bg-emerald-50">
@@ -431,7 +431,7 @@ export default function ProductDetails({
             href="#montar-pedido"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 text-sm font-bold text-emerald-800"
           >
-            Opcoes
+            Opções
           </a>
           <button
             type="button"

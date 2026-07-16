@@ -3,8 +3,8 @@ import LinksHub from '@/components/LinksHub';
 import { getData } from '@/lib/db';
 
 export const metadata: Metadata = {
-  title: 'Links | Espaco Vida Saudavel NISI',
-  description: 'Links oficiais do Espaco Vida Saudavel NISI.',
+  title: 'Links | Espaço Vida Saudável NISI',
+  description: 'Links oficiais do Espaço Vida Saudável NISI.',
 };
 
 function onlyDigits(value?: string | null) {
@@ -28,13 +28,13 @@ export default async function LinksPage() {
   const links = [
     {
       id: 'digital-menu',
-      label: 'Cardapio Digital',
+      label: 'Cardápio Digital',
       href: '/',
       imageSrc: '/links/cardapio-digital.png',
     },
     {
       id: 'whatsapp-order',
-      label: 'Compre pelo whatsapp',
+      label: 'Compre pelo WhatsApp',
       href: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`,
       imageSrc: '/links/compre-whatsapp.png',
       external: true,
@@ -48,7 +48,7 @@ export default async function LinksPage() {
     },
     {
       id: 'google-review',
-      label: 'Avaliar no google',
+      label: 'Avaliar no Google',
       href: googleReviewUrl,
       imageSrc: '/links/avaliar-google.png',
       external: true,

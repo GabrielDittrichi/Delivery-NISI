@@ -129,7 +129,7 @@ export default function AdminDashboard({
           <header className="mb-6 rounded-lg border border-emerald-100 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Espaco Vida Saudavel NISI</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Espaço Vida Saudável NISI</p>
                 <h2 className="mt-1 text-2xl font-bold text-gray-950">{currentTab.label}</h2>
                 <p className="mt-1 text-sm text-gray-600">{currentTab.description}</p>
               </div>

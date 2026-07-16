@@ -91,7 +91,7 @@ export default function CustomersManager({
   };
 
   const exportCustomers = () => {
-    const headers = ['Nome', 'Telefone', 'CEP', 'Endereco', 'Bairro', 'Cidade', 'Tipo', 'Pedidos', 'Ultimo pedido', 'Total comprado'];
+    const headers = ['Nome', 'Telefone', 'CEP', 'Endereço', 'Bairro', 'Cidade', 'Tipo', 'Pedidos', 'Último pedido', 'Total comprado'];
     const rows = customers.map((customer) => [
       customer.name,
       formatPhone(customer.phone),
@@ -170,7 +170,7 @@ export default function CustomersManager({
         }
       >
         {customers.length === 0 ? (
-          <AdminEmptyState icon={Users} title="Nenhum cliente encontrado" description="Os clientes aparecem aqui depois dos pedidos concluidos no checkout." />
+          <AdminEmptyState icon={Users} title="Nenhum cliente encontrado" description="Os clientes aparecem aqui depois dos pedidos concluídos no checkout." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[840px] text-left">

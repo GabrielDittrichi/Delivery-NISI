@@ -184,13 +184,13 @@ export default function ProductManager({ categories, products }: { categories: C
     setConfirm({
       title: 'Excluir produto',
       message: product
-        ? `Tem certeza que deseja excluir "${product.name}"? Esta acao nao pode ser desfeita.`
+        ? `Tem certeza que deseja excluir "${product.name}"? Esta ação não pode ser desfeita.`
         : 'Tem certeza que deseja excluir este produto?',
       destructive: true,
       confirmLabel: 'Excluir',
       onConfirm: async () => {
         await deleteProduct(id);
-        toast.success('Produto excluido com sucesso!');
+        toast.success('Produto excluído com sucesso!');
       },
     });
   }
@@ -217,8 +217,8 @@ export default function ProductManager({ categories, products }: { categories: C
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <AdminStatCard label="Cadastrados" value={products.length} detail="itens no cardapio" icon={ToggleLeft} />
-        <AdminStatCard label="Ativos" value={activeCount} detail="visiveis no site" icon={Sparkles} />
+        <AdminStatCard label="Cadastrados" value={products.length} detail="itens no cardápio" icon={ToggleLeft} />
+        <AdminStatCard label="Ativos" value={activeCount} detail="visíveis no site" icon={Sparkles} />
         <AdminStatCard label="Destaques" value={featuredCount} detail="prioridade na vitrine" icon={Sparkles} />
         <AdminStatCard label="Sem foto" value={noImageCount} detail="precisam de foto" icon={ImageOff} />
       </div>
@@ -534,12 +534,12 @@ export default function ProductManager({ categories, products }: { categories: C
                           />
                         </div>
                         <div>
-                          <ImageUpload title="Video do produto" accept="video/*" onUploadComplete={(url) => handleMediaUploaded('videoUrl', url)} />
+                          <ImageUpload title="Vídeo do produto" accept="video/*" onUploadComplete={(url) => handleMediaUploaded('videoUrl', url)} />
                           <input
                             type="url"
                             value={formData.videoUrl}
                             onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                            placeholder="URL do video"
+                            placeholder="URL do vídeo"
                             className="mt-2 block w-full rounded-md border border-emerald-100 p-2 text-sm text-gray-900"
                           />
                         </div>
@@ -565,7 +565,7 @@ export default function ProductManager({ categories, products }: { categories: C
       )}
 
       <AdminSection
-        title="Catalogo"
+        title="Catálogo"
         description="Filtre por categoria, status ou produtos que precisam de foto."
         action={
           <div className="relative w-full sm:w-80">
@@ -581,7 +581,7 @@ export default function ProductManager({ categories, products }: { categories: C
         }
       >
       <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
-        <button onClick={() => setCategoryFilter('ALL')} className={`rounded-lg px-3 py-2 text-sm font-semibold ${categoryFilter === 'ALL' ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>Todas categorias</button>
+        <button onClick={() => setCategoryFilter('ALL')} className={`rounded-lg px-3 py-2 text-sm font-semibold ${categoryFilter === 'ALL' ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>Todas as categorias</button>
         {categories.map((category) => (
           <button key={category.id} onClick={() => setCategoryFilter(category.id)} className={`rounded-lg px-3 py-2 text-sm font-semibold ${categoryFilter === category.id ? 'bg-emerald-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-emerald-50'}`}>
             {category.name}
@@ -654,7 +654,7 @@ export default function ProductManager({ categories, products }: { categories: C
         })}
 
         {visibleProducts.length === 0 && (
-            <AdminEmptyState icon={ShoppingBag} title="Nenhum produto encontrado" description="Ajuste os filtros ou cadastre um novo item para o cardapio." />
+            <AdminEmptyState icon={ShoppingBag} title="Nenhum produto encontrado" description="Ajuste os filtros ou cadastre um novo item para o cardápio." />
         )}
       </div>
       </AdminSection>

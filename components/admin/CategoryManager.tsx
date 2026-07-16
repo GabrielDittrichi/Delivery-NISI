@@ -34,13 +34,13 @@ export default function CategoryManager({ categories, products }: { categories: 
     setConfirm({
       title: 'Excluir categoria',
       message: cat
-        ? `Tem certeza que deseja excluir "${cat.name}"? ${productCount > 0 ? `Todos os ${productCount} produto${productCount > 1 ? 's' : ''} desta categoria tambem serao excluidos permanentemente.` : 'Nao ha produtos nesta categoria.'}`
+        ? `Tem certeza que deseja excluir "${cat.name}"? ${productCount > 0 ? `Todos os ${productCount} produto${productCount > 1 ? 's' : ''} desta categoria também serão excluídos permanentemente.` : 'Não há produtos nesta categoria.'}`
         : 'Tem certeza?',
       destructive: true,
       confirmLabel: 'Excluir categoria',
       onConfirm: async () => {
         await deleteCategory(id);
-        toast.success('Categoria excluida com sucesso!');
+        toast.success('Categoria excluída com sucesso!');
       },
     });
   };
@@ -75,7 +75,7 @@ export default function CategoryManager({ categories, products }: { categories: 
       <div className="mt-6">
         <AdminSection title="Ordem do cardápio">
           {categories.length === 0 ? (
-            <AdminEmptyState icon={ListTree} title="Nenhuma categoria cadastrada" description="Crie a primeira categoria para organizar os produtos do cardapio." />
+            <AdminEmptyState icon={ListTree} title="Nenhuma categoria cadastrada" description="Crie a primeira categoria para organizar os produtos do cardápio." />
           ) : (
             <ul className="space-y-3">
               {categories.map((cat, index) => {

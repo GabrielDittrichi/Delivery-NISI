@@ -54,8 +54,8 @@ export interface DataStore {
 }
 
 export const defaultRestaurant: Restaurant = {
-  name: "Espaco Vida Saudavel NISI",
-  description: "Shakes, bebidas funcionais e opcoes proteicas para uma rotina mais leve.",
+  name: "Espaço Vida Saudável NISI",
+  description: "Shakes, bebidas funcionais e opções proteicas para uma rotina mais leve.",
   rating: 4.9,
   deliveryTime: "15-25 min",
   deliveryFee: 0,
@@ -64,9 +64,9 @@ export const defaultRestaurant: Restaurant = {
   logoUrl: "/brand/nisi-logo.jpeg",
   primaryColor: "#16803C",
   whatsapp: "",
-  address: "Av. Abilio Machado, 1.928 - sala 01 - Alipio de Melo",
+  address: "Av. Abílio Machado, 1.928 - sala 01 - Alípio de Melo",
   businessHours: "",
-  institutionalText: "Cardapio saudavel com shakes, bebidas funcionais, salgados e sobremesas proteicas."
+  institutionalText: "Cardápio saudável com shakes, bebidas funcionais, salgados e sobremesas proteicas."
 };
 
 export const sampleCategories: Category[] = [
@@ -79,7 +79,7 @@ export const sampleCategories: Category[] = [
 export const commonAddons = [
   { id: "addon-porcao-frango", name: "Porcao de frango", price: 5 },
   { id: "addon-salada-parte", name: "Salada a parte", price: 8 },
-  { id: "addon-proteina-5g", name: "Colher de proteina 5g", price: 8 },
+  { id: "addon-proteina-5g", name: "Colher de proteína 5g", price: 8 },
 ];
 
 export const sampleProducts: Product[] = [
@@ -88,7 +88,7 @@ export const sampleProducts: Product[] = [
     categoryId: "salgados",
     name: "Torta de Frango",
     slug: "torta-de-frango",
-    description: "Torta de frango proteica para uma refeicao pratica, saborosa e com mais saciedade.",
+    description: "Torta de frango proteica para uma refeição prática, saborosa e com mais saciedade.",
     price: 30,
     imageUrl: null,
     videoUrl: "https://pub-b0c6576fd7ce4550917b484175556894.r2.dev/a2f89c85-3b6a-490a-bbdd-1ee66fed92af.mp4",
@@ -105,7 +105,7 @@ export const sampleProducts: Product[] = [
     categoryId: "salgados",
     name: "Empada",
     slug: "empada",
-    description: "Empada de frango zero % farinha, leve e pratica para qualquer hora.",
+    description: "Empada de frango zero % farinha, leve e prática para qualquer hora.",
     price: 4,
     imageUrl: null,
     proteins: 7,
@@ -121,7 +121,7 @@ export const sampleProducts: Product[] = [
     categoryId: "salgados",
     name: "Omelete",
     slug: "omelete",
-    description: "Omelete nutritivo com salada fresca, ideal para uma refeicao leve e com mais saciedade.",
+    description: "Omelete nutritivo com salada fresca, ideal para uma refeição leve e com mais saciedade.",
     price: 25,
     imageUrl: null,
     proteins: 30,
@@ -138,9 +138,9 @@ export const sampleProducts: Product[] = [
   {
     id: "pao-de-queijo",
     categoryId: "salgados",
-    name: "Pao de Queijo",
+    name: "Pão de Queijo",
     slug: "pao-de-queijo",
-    description: "Opcao salgada rapida para acompanhar shakes, bebidas e lanches leves.",
+    description: "Opção salgada rápida para acompanhar shakes, bebidas e lanches leves.",
     price: 4,
     imageUrl: null,
     proteins: 4,
@@ -154,9 +154,9 @@ export const sampleProducts: Product[] = [
   {
     id: "sanduiche-frango",
     categoryId: "salgados",
-    name: "Sanduiche de Frango",
+    name: "Sanduíche de Frango",
     slug: "sanduiche-de-frango",
-    description: "Sanduiche de frango pratico, nutritivo e rico em proteinas para sustentar a rotina.",
+    description: "Sanduíche de frango prático, nutritivo e rico em proteínas para sustentar a rotina.",
     price: 25,
     imageUrl: null,
     proteins: 45,
@@ -172,7 +172,7 @@ export const sampleProducts: Product[] = [
     categoryId: "salgados",
     name: "NutriSoup",
     slug: "nutrisoup",
-    description: "Sopa proteica quente para uma refeicao pratica, leve e equilibrada.",
+    description: "Sopa proteica quente para uma refeição prática, leve e equilibrada.",
     price: 25,
     imageUrl: null,
     proteins: 0,
@@ -186,9 +186,9 @@ export const sampleProducts: Product[] = [
   {
     id: "sanduiche-atum",
     categoryId: "salgados",
-    name: "Sanduiche de Atum",
+    name: "Sanduíche de Atum",
     slug: "sanduiche-de-atum",
-    description: "Sanduiche de atum pratico, nutritivo e rico em proteinas.",
+    description: "Sanduíche de atum prático, nutritivo e rico em proteínas.",
     price: 25,
     imageUrl: null,
     proteins: 45,
@@ -202,7 +202,7 @@ export const sampleProducts: Product[] = [
   {
     id: "fibra-prebiotica",
     categoryId: "bebidas",
-    name: "Fibra Prebiotica",
+    name: "Fibra Prebiótica",
     slug: "fibra-prebiotica",
     description: "Fibra concentrada em sabores leves para apoiar saciedade e bem-estar.",
     price: 28.9,
@@ -214,7 +214,7 @@ export const sampleProducts: Product[] = [
     flavors: [
       { id: "manga", name: "Manga" },
       { id: "uva", name: "Uva" },
-      { id: "limao-fibra", name: "Limao" },
+      { id: "limao-fibra", name: "Limão" },
     ],
     addons: commonAddons,
     allowMultipleAddons: true,
@@ -313,9 +313,9 @@ export const sampleProducts: Product[] = [
     volume: 0,
     flavors: [
       { id: "chokito", name: "Chokito" },
-      { id: "torta-limao", name: "Torta de Limao" },
-      { id: "pina-colada", name: "Pina Colada" },
-      { id: "prestigio", name: "Prestigio" },
+      { id: "torta-limao", name: "Torta de Limão" },
+      { id: "pina-colada", name: "Piña Colada" },
+      { id: "prestigio", name: "Prestígio" },
     ],
     addons: [],
     allowMultipleAddons: true,
@@ -325,7 +325,7 @@ export const sampleProducts: Product[] = [
     categoryId: "shakes",
     name: "Shake Proteico",
     slug: "shake-proteico",
-    description: "Shake proteico cremoso para reforcar a rotina com sabor, praticidade e complementos.",
+    description: "Shake proteico cremoso para reforçar a rotina com sabor, praticidade e complementos.",
     price: 28,
     imageUrl: null,
     proteins: 0,
@@ -333,9 +333,9 @@ export const sampleProducts: Product[] = [
     weight: 0,
     volume: 400,
     flavors: [
-      { id: "pina-colada-shake", name: "Pina Colada" },
+      { id: "pina-colada-shake", name: "Piña Colada" },
       { id: "chicabon", name: "Chicabon" },
-      { id: "prestigio-shake", name: "Prestigio" },
+      { id: "prestigio-shake", name: "Prestígio" },
       { id: "cappuccino", name: "Cappuccino" },
       { id: "flocos", name: "Flocos" },
       { id: "quick", name: "Quick" },

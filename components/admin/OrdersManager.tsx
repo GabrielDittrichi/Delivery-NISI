@@ -74,7 +74,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
     const order = orders.find(o => o.id === orderId);
     setConfirm({
       title: 'Cancelar pedido',
-      message: `Tem certeza que deseja cancelar o pedido de ${order?.customerName || 'desconhecido'}? Esta acao nao pode ser desfeita.`,
+      message: `Tem certeza que deseja cancelar o pedido de ${order?.customerName || 'desconhecido'}? Esta ação não pode ser desfeita.`,
       destructive: true,
       confirmLabel: 'Cancelar pedido',
       onConfirm: () => handleStatusUpdate(orderId, 'CANCELED'),
@@ -145,7 +145,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <AdminStatCard label="Pendentes" value={pendingOrders} detail="aguardando confirmacao" icon={Clock} />
+        <AdminStatCard label="Pendentes" value={pendingOrders} detail="aguardando confirmação" icon={Clock} />
         <AdminStatCard label="Entregues" value={deliveredOrders} detail="finalizados" icon={CheckCircle} />
         <AdminStatCard label="Entregas" value={deliveryOrders} detail="versus retiradas" icon={Bike} />
         <AdminStatCard label="Receita" value={formatCurrency(totalRevenue)} detail="sem cancelados" icon={Banknote} />
@@ -274,7 +274,7 @@ export default function OrdersManager({ initialOrders }: { initialOrders: Order[
                             <p><span className="font-medium">Telefone:</span> {order.customerPhone}</p>
                             <p><span className="font-medium">Tipo:</span> {getDeliveryMethodLabel(order.deliveryMethod)}</p>
                             {order.deliveryMethod === 'PICKUP' ? (
-                              <p><span className="font-medium">Retirada:</span> Espaco Vida Saudavel NISI</p>
+                              <p><span className="font-medium">Retirada:</span> Espaço Vida Saudável NISI</p>
                             ) : (
                               <>
                                 <p><span className="font-medium">Endereço:</span> {order.street}, {order.number}</p>

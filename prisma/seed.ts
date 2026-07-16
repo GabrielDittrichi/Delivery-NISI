@@ -5,7 +5,7 @@ import { defaultRestaurant, sampleCategories, sampleProducts } from '../lib/db';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding Espaco Vida Saudavel NISI...');
+  console.log('Seeding Espaço Vida Saudável NISI...');
 
   const existingRestaurant = await prisma.restaurant.findFirst();
   if (existingRestaurant) {

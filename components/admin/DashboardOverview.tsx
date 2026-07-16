@@ -99,7 +99,7 @@ export default function DashboardOverview({
           <button onClick={() => onNavigate('products')} className="rounded-lg border border-emerald-100 bg-white p-4 text-left transition-colors hover:bg-emerald-50">
             <ShoppingBag className="mb-3 text-emerald-700" size={20} />
             <p className="font-semibold text-gray-950">Novo produto</p>
-            <p className="mt-1 text-sm text-gray-600">Ajuste cardapio e destaques.</p>
+            <p className="mt-1 text-sm text-gray-600">Ajuste cardápio e destaques.</p>
           </button>
           <button onClick={() => onNavigate('coupons')} className="rounded-lg border border-emerald-100 bg-white p-4 text-left transition-colors hover:bg-emerald-50">
             <BadgePercent className="mb-3 text-emerald-700" size={20} />

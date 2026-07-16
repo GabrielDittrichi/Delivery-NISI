@@ -45,7 +45,7 @@ export default function Header({ restaurant, simplified = false }: { restaurant:
         <div className="flex-1 pt-2 md:pt-0">
             <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border bg-white/90 px-2.5 py-1 text-xs font-semibold text-emerald-700 shadow-sm" style={{ borderColor: 'var(--border)' }}>
               <Leaf size={13} />
-              Espaco Vida Saudavel
+              Espaço Vida Saudável
             </div>
             <h1 className="text-2xl font-bold text-gray-900 leading-tight">{restaurant.name}</h1>
             {restaurant.description && (
