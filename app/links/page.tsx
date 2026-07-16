@@ -23,7 +23,7 @@ export default async function LinksPage() {
     `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Oi! Quero entrar na Comunidade NISI.')}`;
   const googleReviewUrl =
     process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL ||
-    'https://www.google.com/search?q=Espaco+Vida+Saudavel+NISI+Av.+Abilio+Machado+1928';
+    'https://share.google/l7RQjgBJFXc0wWh37';
 
   const links = [
     {
