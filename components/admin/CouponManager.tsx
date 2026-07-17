@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { BadgePercent, CalendarX, RefreshCw, ToggleLeft, Trash2, Plus, Tag } from 'lucide-react';
+import { BadgePercent, CalendarX, Gift, RefreshCw, Sparkles, ToggleLeft, Trash2, Plus, Tag, Users } from 'lucide-react';
 import { AdminEmptyState, AdminPageHeader, AdminSection, AdminStatCard } from './AdminPrimitives';
 import ConfirmDialog from './ConfirmDialog';
 import { toast } from 'sonner';
@@ -19,6 +19,33 @@ interface Coupon {
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const crmCouponPresets = [
+  {
+    label: 'Retorno',
+    description: 'Para clientes inativos voltarem ao cardápio.',
+    icon: Gift,
+    data: { code: 'VOLTE10', type: 'PERCENTAGE', value: '10', minOrder: '30', usageLimit: '', expiresAt: '' },
+  },
+  {
+    label: 'VIP',
+    description: 'Condição especial para clientes de maior valor.',
+    icon: Sparkles,
+    data: { code: 'VIP15', type: 'PERCENTAGE', value: '15', minOrder: '40', usageLimit: '', expiresAt: '' },
+  },
+  {
+    label: 'Primeira compra',
+    description: 'Incentivo para novos contatos testarem o NISI.',
+    icon: Users,
+    data: { code: 'BEMVINDO10', type: 'PERCENTAGE', value: '10', minOrder: '25', usageLimit: '', expiresAt: '' },
+  },
+  {
+    label: 'Recorrentes',
+    description: 'Cupom para quem já comprou mais de uma vez.',
+    icon: BadgePercent,
+    data: { code: 'NISI5', type: 'FIXED', value: '5', minOrder: '35', usageLimit: '', expiresAt: '' },
+  },
+];
 
 export default function CouponManager() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -164,6 +191,27 @@ export default function CouponManager() {
         <AdminStatCard label="Vencidos" value={expiredCoupons} detail="fora da validade" icon={CalendarX} />
         <AdminStatCard label="Usos totais" value={totalUses} detail="registrados" icon={Tag} />
       </div>
+
+      <AdminSection title="Cupons por segmento" description="Presets rápidos para usar junto com as etiquetas do CRM na aba Clientes.">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {crmCouponPresets.map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => setNewCoupon(preset.data)}
+                className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-4 text-left transition-colors hover:bg-emerald-100"
+              >
+                <Icon className="mb-3 text-emerald-700" size={20} />
+                <p className="font-semibold text-gray-950">{preset.label}</p>
+                <p className="mt-1 text-sm leading-5 text-gray-600">{preset.description}</p>
+                <p className="mt-3 text-xs font-bold uppercase tracking-[0.12em] text-emerald-700">Usar modelo</p>
+              </button>
+            );
+          })}
+        </div>
+      </AdminSection>
 
       <AdminSection title="Novo cupom" description="Defina valor, validade e limite antes de divulgar.">
       <form onSubmit={handleCreate} className="space-y-4">

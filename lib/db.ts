@@ -367,11 +367,7 @@ export const sampleProducts: Product[] = [
 export async function getData(): Promise<DataStore> {
   // Allow builds/previews to run without a database configured.
   if (!process.env.DATABASE_URL) {
-    return {
-      restaurant: defaultRestaurant,
-      categories: sampleCategories,
-      products: sampleProducts
-    };
+    return getFallbackData();
   }
   try {
     const restaurant = await prisma.restaurant.findFirst();
@@ -392,11 +388,18 @@ export async function getData(): Promise<DataStore> {
         addons: product.addons.map(a => ({ id: a.id, name: a.name, price: a.price }))
       }))
     };
-  } catch (error) {
-    console.error("Error fetching data from database:", error);
-    // Fallback or rethrow
-    throw error;
+  } catch {
+    console.info("Using fallback data after database error.");
+    return getFallbackData();
   }
+}
+
+export function getFallbackData(): DataStore {
+  return {
+    restaurant: defaultRestaurant,
+    categories: sampleCategories,
+    products: sampleProducts
+  };
 }
 
 export async function getProducts(categoryId?: string): Promise<Product[]> {

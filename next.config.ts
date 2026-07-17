@@ -1,3 +1,6 @@
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
 function getImageHostFromEnv(envValue?: string) {
   if (!envValue) return null;
   try {
@@ -8,8 +11,13 @@ function getImageHostFromEnv(envValue?: string) {
   }
 }
 
+const projectRoot = dirname(fileURLToPath(import.meta.url));
+
 const nextConfig = {
   reactCompiler: true,
+  turbopack: {
+    root: projectRoot,
+  },
   images: (() => {
     const host = getImageHostFromEnv(process.env.R2_PUBLIC_URL);
     return host

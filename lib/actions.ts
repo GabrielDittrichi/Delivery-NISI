@@ -131,62 +131,180 @@ export async function getOrders() {
 export async function getCustomers() {
   if (!process.env.DATABASE_URL) return [];
 
-  // Aggregate orders by phone using groupBy
-  const grouped = await prisma.order.groupBy({
-    by: ['customerPhone'],
-    _count: { customerPhone: true },
-    _sum: { total: true },
-    _max: { createdAt: true },
+  const orders = await prisma.order.findMany({
     where: { status: { not: 'CANCELED' } },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              category: true,
+              addons: true,
+              flavors: true,
+            },
+          },
+        },
+      },
+    },
   });
 
-  // Get the latest order details for each customer
-  const phones = grouped.map(g => g.customerPhone);
-  const latestOrders = new Map<string, {
-    customerName: string; cep: string; street: string; number: string;
-    neighborhood: string; city: string; deliveryMethod: string;
-  }>();
+  const normalizePhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    return digits.startsWith('55') && digits.length > 11 ? digits.slice(2) : digits;
+  };
 
-  // Fetch latest order per phone in batches
-  const batchSize = 50;
-  for (let i = 0; i < phones.length; i += batchSize) {
-    const batch = phones.slice(i, i + batchSize);
-    const latestPerBatch = await Promise.all(
-      batch.map(phone =>
-        prisma.order.findFirst({
-          where: { customerPhone: phone, status: { not: 'CANCELED' } },
-          orderBy: { createdAt: 'desc' },
-        })
-      )
-    );
-      latestPerBatch.forEach((order, idx) => {
-        if (order) latestOrders.set(batch[idx], {
-          customerName: order.customerName,
-          cep: order.cep,
-          street: order.street,
-          number: order.number,
-          neighborhood: order.neighborhood,
-          city: order.city,
-          deliveryMethod: order.deliveryMethod,
-        });
-      });
-  }
+  const normalizeText = (value: string) =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-  return grouped
-    .map(g => {
-      const latest = latestOrders.get(g.customerPhone);
+  const getTopEntry = (map: Map<string, number>) => {
+    const [name, count] = Array.from(map.entries()).sort((a, b) => b[1] - a[1])[0] || ['', 0];
+    return { name, count };
+  };
+
+  type CustomerOrder = (typeof orders)[number];
+  type CustomerGroup = {
+    phone: string;
+    orders: CustomerOrder[];
+    totalSpent: number;
+    products: Map<string, { name: string; quantity: number; total: number }>;
+    categories: Map<string, number>;
+    flavors: Map<string, number>;
+    addons: Map<string, number>;
+    deliveryMethods: Map<string, number>;
+  };
+
+  const groups = new Map<string, CustomerGroup>();
+
+  orders.forEach((order) => {
+    const phone = normalizePhone(order.customerPhone);
+    if (!phone) return;
+
+    const group: CustomerGroup = groups.get(phone) || {
+      phone,
+      orders: [],
+      totalSpent: 0,
+      products: new Map(),
+      categories: new Map(),
+      flavors: new Map(),
+      addons: new Map(),
+      deliveryMethods: new Map(),
+    };
+
+    group.orders.push(order);
+    group.totalSpent += order.total;
+    group.deliveryMethods.set(order.deliveryMethod, (group.deliveryMethods.get(order.deliveryMethod) || 0) + 1);
+
+    order.items.forEach((item) => {
+      const product = group.products.get(item.productName) || { name: item.productName, quantity: 0, total: 0 };
+      product.quantity += item.quantity;
+      product.total += item.total;
+      group.products.set(item.productName, product);
+
+      const categoryName = item.product?.category?.name;
+      if (categoryName) {
+        group.categories.set(categoryName, (group.categories.get(categoryName) || 0) + item.quantity);
+      }
+
+      const selectedFlavorName = item.selectedFlavor
+        ? item.product?.flavors.find((flavor) => flavor.id === item.selectedFlavor)?.name || item.selectedFlavor
+        : '';
+      if (selectedFlavorName) {
+        group.flavors.set(selectedFlavorName, (group.flavors.get(selectedFlavorName) || 0) + item.quantity);
+      }
+
+      if (item.selectedAddons) {
+        try {
+          const selectedAddonIds = JSON.parse(item.selectedAddons) as string[];
+          selectedAddonIds.forEach((addonId) => {
+            const addonName = item.product?.addons.find((addon) => addon.id === addonId)?.name || addonId;
+            group.addons.set(addonName, (group.addons.get(addonName) || 0) + item.quantity);
+          });
+        } catch {
+          group.addons.set(item.selectedAddons, (group.addons.get(item.selectedAddons) || 0) + item.quantity);
+        }
+      }
+    });
+
+    groups.set(phone, group);
+  });
+
+  const totalRevenue = Array.from(groups.values()).reduce((total, group) => total + group.totalSpent, 0);
+  const averageCustomerTicket = groups.size > 0 ? totalRevenue / groups.size : 0;
+  const today = new Date();
+
+  return Array.from(groups.values())
+    .map((group) => {
+      const sortedOrders = group.orders.slice().sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      const firstOrder = sortedOrders[0];
+      const latest = sortedOrders[sortedOrders.length - 1];
+      const daysSinceLastOrder = Math.floor((today.getTime() - latest.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const averageTicket = group.totalSpent / group.orders.length;
+      const topProduct = Array.from(group.products.values()).sort((a, b) => b.quantity - a.quantity || b.total - a.total)[0] || null;
+      const topCategory = getTopEntry(group.categories);
+      const topFlavor = getTopEntry(group.flavors);
+      const topAddon = getTopEntry(group.addons);
+      const preferredDeliveryMethod = getTopEntry(group.deliveryMethods).name || latest.deliveryMethod;
+      const productNames = Array.from(group.products.keys()).map(normalizeText).join(' ');
+      const categoryNames = Array.from(group.categories.keys()).map(normalizeText).join(' ');
+      const behaviorText = `${productNames} ${categoryNames}`;
+      const tags: string[] = [];
+
+      if (group.orders.length === 1) tags.push('Novo cliente');
+      if (group.orders.length > 1) tags.push('Recorrente');
+      if (group.totalSpent >= 200 || group.orders.length >= 5) tags.push('VIP');
+      if (averageTicket > averageCustomerTicket && group.orders.length > 1) tags.push('Alto ticket');
+      if (daysSinceLastOrder >= 30) tags.push('Inativo');
+      else if (daysSinceLastOrder >= 15) tags.push('Quase inativo');
+      if (/shake/.test(behaviorText)) tags.push('Comprou shake');
+      if (/(empada|pao de queijo|sanduiche|omelete|torta|salgado)/.test(behaviorText)) tags.push('Comprou salgado');
+      if (/(cha|detox|turbo|bebida|funcional)/.test(behaviorText)) tags.push('Comprou bebida funcional');
+      tags.push(preferredDeliveryMethod === 'PICKUP' ? 'Prefere retirada' : 'Prefere entrega');
+      if (latest.neighborhood) tags.push(`Bairro: ${latest.neighborhood}`);
+
+      let relationshipStatus = 'Novo';
+      if (tags.includes('VIP')) relationshipStatus = 'VIP';
+      else if (tags.includes('Inativo')) relationshipStatus = 'Inativo';
+      else if (tags.includes('Recorrente')) relationshipStatus = 'Recorrente';
+
+      let repurchaseProbability = 'Baixa';
+      if (group.orders.length > 1 && daysSinceLastOrder <= 14) repurchaseProbability = 'Alta';
+      else if (group.orders.length > 1 || daysSinceLastOrder <= 21) repurchaseProbability = 'Média';
+
+      const suggestedApproach = tags.includes('Inativo')
+        ? 'Enviar cupom de retorno'
+        : tags.includes('VIP')
+          ? 'Enviar cupom VIP'
+          : topProduct
+            ? `Oferecer ${topProduct.name}`
+            : 'Mandar agradecimento';
+
       return {
-        name: latest?.customerName || 'Desconhecido',
-        phone: g.customerPhone,
-        cep: latest?.cep || '',
-        street: latest?.street || '',
-        number: latest?.number || '',
-        neighborhood: latest?.neighborhood || '',
-        city: latest?.city || '',
-        deliveryMethod: latest?.deliveryMethod || 'DELIVERY',
-        ordersCount: g._count.customerPhone,
-        lastOrderAt: g._max.createdAt || new Date(),
-        totalSpent: g._sum.total || 0,
+        name: latest.customerName || 'Desconhecido',
+        phone: group.phone,
+        cep: latest.cep || '',
+        street: latest.street || '',
+        number: latest.number || '',
+        neighborhood: latest.neighborhood || '',
+        city: latest.city || '',
+        deliveryMethod: preferredDeliveryMethod || 'DELIVERY',
+        ordersCount: group.orders.length,
+        firstOrderAt: firstOrder.createdAt,
+        lastOrderAt: latest.createdAt,
+        daysSinceLastOrder,
+        totalSpent: group.totalSpent,
+        averageTicket,
+        relationshipStatus,
+        repurchaseProbability,
+        suggestedApproach,
+        tags,
+        favoriteProduct: topProduct,
+        favoriteCategory: topCategory.name,
+        favoriteFlavor: topFlavor.name,
+        favoriteAddon: topAddon.name,
+        topProducts: Array.from(group.products.values())
+          .sort((a, b) => b.quantity - a.quantity || b.total - a.total)
+          .slice(0, 3),
       };
     })
     .sort((a, b) => new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime());
