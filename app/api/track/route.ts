@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { trackVisit } from '@/lib/analytics';
+import { isJsonTooLarge, isRateLimited } from '@/lib/rate-limit';
 
 function getClientIp(req: Request): string | undefined {
   const xf = req.headers.get('x-forwarded-for');
@@ -10,8 +11,15 @@ function getClientIp(req: Request): string | undefined {
 
 export async function POST(req: Request) {
   try {
+    if (isJsonTooLarge(req, 4 * 1024)) {
+      return NextResponse.json({ message: 'Payload muito grande' }, { status: 413 });
+    }
+    if (isRateLimited(req, 'track', 30, 60_000)) {
+      return NextResponse.json({ message: 'Muitas requisições' }, { status: 429 });
+    }
+
     const body = await req.json().catch(() => ({}));
-    const referer = typeof body?.referer === 'string' ? body.referer : undefined;
+    const referer = typeof body?.referer === 'string' ? body.referer.slice(0, 500) : undefined;
 
     await trackVisit({
       userAgent: req.headers.get('user-agent') || undefined,
@@ -25,4 +33,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
-

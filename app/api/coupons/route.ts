@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createMemoryCoupon, getMemoryCoupons } from '@/lib/coupons';
+import { createCouponSchema } from '@/lib/validations';
+import { isJsonTooLarge } from '@/lib/rate-limit';
 
 export async function GET() {
   if (!process.env.DATABASE_URL) {
@@ -23,26 +25,33 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { code, type, value, isActive, expiresAt, usageLimit, minOrder } = body;
+    if (isJsonTooLarge(request, 4 * 1024)) {
+      return NextResponse.json({ message: 'Payload muito grande' }, { status: 413 });
+    }
 
-    if (!code || !type || value === undefined) {
+    const body = await request.json();
+    const parsed = createCouponSchema.safeParse(body);
+
+    if (!parsed.success) {
       return NextResponse.json(
         { message: 'Dados inválidos' },
         { status: 400 }
       );
     }
 
+    const { code, type, value, isActive, expiresAt, usageLimit, minOrder } = parsed.data;
+    const normalizedCode = code.toUpperCase();
+
     if (!process.env.DATABASE_URL) {
       try {
         const coupon = createMemoryCoupon({
-          code,
+          code: normalizedCode,
           type,
-          value: Number(value),
+          value,
           isActive,
           expiresAt: expiresAt || null,
-          usageLimit: usageLimit ? Number(usageLimit) : null,
-          minOrder: Number(minOrder || 0),
+          usageLimit: usageLimit || null,
+          minOrder: minOrder || 0,
         });
         return NextResponse.json(coupon);
       } catch (error) {
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     const existingCoupon = await prisma.coupon.findUnique({
-      where: { code: code.toUpperCase() },
+      where: { code: normalizedCode },
     });
 
     if (existingCoupon) {
@@ -69,13 +78,13 @@ export async function POST(request: Request) {
 
     const coupon = await prisma.coupon.create({
       data: {
-        code: code.toUpperCase(),
+        code: normalizedCode,
         type,
-        value: Number(value),
+        value,
         isActive: isActive ?? true,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        usageLimit: usageLimit ? Number(usageLimit) : null,
-        minOrder: Number(minOrder || 0),
+        usageLimit: usageLimit || null,
+        minOrder: minOrder || 0,
       },
     });
 

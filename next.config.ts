@@ -14,9 +14,30 @@ function getImageHostFromEnv(envValue?: string) {
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
+  poweredByHeader: false,
   reactCompiler: true,
   turbopack: {
     root: projectRoot,
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+        ],
+      },
+    ];
   },
   images: (() => {
     const host = getImageHostFromEnv(process.env.R2_PUBLIC_URL);

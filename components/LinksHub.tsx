@@ -108,7 +108,7 @@ export default function LinksHub({
         </div>
 
         <p className="mx-auto mt-5 max-w-sm px-2 text-center text-xs leading-5 text-gray-500">
-          Ao acessar estes links, podemos usar cookies e dados de navegacao para melhorar o atendimento e medir campanhas.
+          Ao acessar estes links, podemos usar cookies e dados de navegação para melhorar o atendimento e medir campanhas.
         </p>
       </section>
     </main>

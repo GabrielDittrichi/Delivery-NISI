@@ -21,13 +21,13 @@ npm ci
 2. Crie `.env.local` baseado no `.env.example`:
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/delivery_nisi
+DATABASE_URL=postgresql://user:password@localhost:5432/rds?sslmode=require&schema=espaconisi
 NEXT_PUBLIC_WHATSAPP_NUMBER=5599999999999
 NEXT_PUBLIC_GTM_ID=
 NEXT_PUBLIC_GA_ID=
 NEXT_PUBLIC_META_PIXEL_ID=
-ADMIN_USERS=nicelia,silvio,abner,rds
-ADMIN_PASS=nisi@2026cardapio
+ADMIN_USERS=admin
+ADMIN_PASS=use-uma-senha-forte-aqui
 ```
 
 3. Rode migrations e seed:
@@ -45,18 +45,9 @@ npm run dev
 
 ## Admin
 
-O admin fica em `/admin` e usa Basic Auth.
+O admin fica em `/admin` e usa Basic Auth. Em producao, configure uma senha forte e exclusiva em `ADMIN_PASS`.
 
-Usuarios configurados por `ADMIN_USERS`:
-
-- `nicelia`
-- `silvio`
-- `abner`
-- `rds`
-
-Senha padrao:
-
-- `nisi@2026cardapio`
+Usuarios configurados por `ADMIN_USERS`, separados por virgula. Evite senhas padrao ou compartilhadas.
 
 ## Scripts
 
@@ -77,9 +68,15 @@ npm run prisma:seed
 - Cardapio presencial sem pedidos: `/cardapio`
 - Cupons: `NISI10` vem no seed inicial
 
-## Supabase
+## Banco próprio RDS
 
-Use o Postgres do Supabase preenchendo `DATABASE_URL` com a connection string do projeto. Depois rode:
+Use o PostgreSQL próprio da RDS preenchendo `DATABASE_URL` com a connection string do projeto. Para o Espaço NISI, a aplicação deve usar o schema `espaconisi`:
+
+```env
+DATABASE_URL=postgresql://user:password@host:5432/rds?sslmode=require&schema=espaconisi
+```
+
+Depois rode:
 
 ```bash
 npm run prisma:migrate
@@ -100,4 +97,4 @@ Eventos enviados: `PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout`, `P
 
 ## Observacoes
 
-Sem `DATABASE_URL`, o app usa os produtos reais do PDF como fallback local. Com banco configurado, usa os dados cadastrados no admin/Supabase.
+Sem `DATABASE_URL`, o app usa os produtos reais do PDF como fallback local. Com banco configurado, usa os dados cadastrados no admin/PostgreSQL.

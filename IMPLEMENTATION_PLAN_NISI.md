@@ -1,6 +1,6 @@
 # Plano de Implementacao - Espaco Vida Saudavel NISI
 
-Objetivo: ajustar o projeto para operar com produtos reais do Espaco Vida Saudavel NISI, admin mais completo, cardapio presencial separado, Supabase e tagueamento Google/Meta.
+Objetivo: ajustar o projeto para operar com produtos reais do Espaco Vida Saudavel NISI, admin mais completo, cardapio presencial separado, PostgreSQL proprio da RDS e tagueamento Google/Meta.
 
 ## 1. Identidade Visual
 
@@ -157,9 +157,9 @@ Objetivo: ajustar o projeto para operar com produtos reais do Espaco Vida Saudav
   - [x] Mais informativo
   - [x] Melhor para leitura rapida na mesa/balcao
 
-## 8. Banco de Dados Supabase
+## 8. Banco de Dados PostgreSQL Proprio
 
-- [x] Usar Supabase Postgres como banco principal.
+- [x] Usar PostgreSQL proprio da RDS como banco principal no schema `espaconisi`.
 - [x] Configurar:
   - [x] `DATABASE_URL`
   - [x] Migrations Prisma
@@ -208,7 +208,7 @@ Objetivo: ajustar o projeto para operar com produtos reais do Espaco Vida Saudav
 4. Criar aba `Clientes`.
 5. Criar rota `/cardapio` sem pedido.
 6. Melhorar Admin visual e funcional.
-7. Preparar Supabase/migrations/seed.
+7. Preparar PostgreSQL/migrations/seed.
 8. Implementar Google/Meta tracking.
 9. Revisar checkout e eventos.
 10. Testar tudo: pedido, admin, cupom, cliente, cardapio visual e tracking.

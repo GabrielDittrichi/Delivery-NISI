@@ -14,14 +14,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.980.0",
-    "@aws-sdk/s3-request-presigner": "^3.980.0",
+    "@aws-sdk/client-s3": "^3.1099.0",
+    "@aws-sdk/s3-request-presigner": "^3.1099.0",
     "@prisma/client": "^5.22.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.29.3",
     "lucide-react": "^0.563.0",
-    "next": "16.1.4",
+    "next": "^16.2.12",
     "prisma": "^5.22.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -37,9 +37,13 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.4",
+    "eslint-config-next": "^16.2.12",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "^8.5.25",
+    "sharp": "^0.35.3"
   }
 }

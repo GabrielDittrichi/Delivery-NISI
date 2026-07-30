@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Leaf, Sparkles } from 'lucide-react';
 import { Product } from '@/lib/db';
 import ProductBadges from './ProductBadges';
 import { useRef } from 'react';
+import SafeImage from './SafeImage';
 
 export default function FeaturedProducts({ products }: { products: Product[] }) {
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -78,7 +78,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
               >
                 <div className="relative mb-3 aspect-[5/3] overflow-hidden rounded-md bg-emerald-50">
                   {product.imageUrl ? (
-                    <Image src={product.imageUrl} alt={product.name} fill sizes="260px" className="object-cover" />
+                    <SafeImage src={product.imageUrl} alt={product.name} fill sizes="260px" className="object-cover" fallbackIconSize={34} />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-emerald-700">
                       <Leaf size={34} />

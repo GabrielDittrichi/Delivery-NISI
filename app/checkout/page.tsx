@@ -217,18 +217,13 @@ export default function CheckoutPage() {
         return;
     }
     if (deliveryMethod === 'DELIVERY' && (cepDigits.length !== 8 || !!cepError)) {
-        setSubmitError('Informe um CEP valido para entrega.');
+        setSubmitError('Informe um CEP válido para entrega.');
         return;
     }
 
     setIsSubmitting(true);
     try {
     const orderEventId = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-    const orderItems = items.map((item) => ({
-      id: item.id,
-      quantity: item.quantity,
-      item_price: item.price + getItemAddonsTotal(item),
-    }));
     const orderData = {
         name: formData.name,
         phone: formData.phone,
@@ -256,16 +251,44 @@ export default function CheckoutPage() {
     const result = await createOrder(orderData);
     
     if (result && result.success) {
+        const confirmedTotals = result.totals || {
+          subtotal: cartTotal,
+          deliveryFee: 0,
+          discount,
+          total: orderData.total,
+        };
+        const confirmedItems = result.items || items.map((item) => {
+          const addonsTotal = getItemAddonsTotal(item);
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price + addonsTotal,
+            total: (item.price + addonsTotal) * item.quantity,
+            selectedFlavor: item.selectedFlavor,
+            selectedFlavorName: item.flavors?.find((flavor) => flavor.id === item.selectedFlavor)?.name,
+            selectedAddons: item.selectedAddons || [],
+            addonNames: (item.selectedAddons || [])
+              .map((id) => item.addons?.find((addon) => addon.id === id)?.name)
+              .filter(Boolean) as string[],
+          };
+        });
+        const confirmedOrderItems = confirmedItems.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+          item_price: item.price,
+        }));
+
         trackMarketingEvent('Purchase', {
           transaction_id: result.orderId,
-          content_ids: items.map(i => i.id),
-          content_name: items.map(i => i.name).join(', '),
+          content_ids: confirmedItems.map(i => i.id),
+          content_name: confirmedItems.map(i => i.name).join(', '),
           content_type: 'product',
           currency: 'BRL',
-          value: orderData.total,
-          coupon: appliedCoupon?.code,
-          contents: orderItems,
-          num_items: items.reduce((count, item) => count + item.quantity, 0),
+          value: confirmedTotals.total,
+          coupon: result.couponCode,
+          contents: confirmedOrderItems,
+          num_items: confirmedItems.reduce((count, item) => count + item.quantity, 0),
           eventID: orderEventId,
         });
 
@@ -284,39 +307,28 @@ export default function CheckoutPage() {
 ${addressText}
 
 *Itens:*
-${items.map(item => {
+${confirmedItems.map(item => {
   const flavorName = item.selectedFlavor
-    ? (item.flavors?.find(f => f.id === item.selectedFlavor)?.name || item.selectedFlavor)
+    ? item.selectedFlavorName || item.selectedFlavor
     : '';
   const addonsText =
-    item.selectedAddons && item.selectedAddons.length > 0
-      ? item.selectedAddons
-          .map(id => {
-            const addon = item.addons?.find(a => a.id === id);
-            if (!addon) return id;
-            return addon.price > 0
-              ? `${addon.name} (+R$ ${addon.price.toFixed(2).replace('.', ',')})`
-              : addon.name;
-          })
-          .join(', ')
+    item.addonNames && item.addonNames.length > 0
+      ? item.addonNames.join(', ')
       : '';
-  const addonsTotal =
-    item.selectedAddons?.reduce((acc, id) => acc + (item.addons?.find(a => a.id === id)?.price || 0), 0) || 0;
-  const lineTotal = (item.price + addonsTotal) * item.quantity;
 
   return `
 ${item.quantity}x ${item.name}
 ${flavorName ? `Sabor: ${flavorName}` : ''}
 ${addonsText ? `Adicionais: ${addonsText}` : ''}
-R$ ${lineTotal.toFixed(2).replace('.', ',')}
+R$ ${item.total.toFixed(2).replace('.', ',')}
 `.trim();
 }).join('\n\n')}
 
 *Resumo:*
-Subtotal: R$ ${cartTotal.toFixed(2).replace('.', ',')}
+Subtotal: R$ ${confirmedTotals.subtotal.toFixed(2).replace('.', ',')}
 ${deliveryMethod === 'DELIVERY' ? 'Entrega: A combinar' : ''}
-${discount > 0 ? `Desconto: -R$ ${discount.toFixed(2).replace('.', ',')}\n` : ''}
-*Total: R$ ${orderData.total.toFixed(2).replace('.', ',')}* ${deliveryMethod === 'DELIVERY' ? '(+ frete)' : ''}
+${confirmedTotals.discount > 0 ? `Desconto: -R$ ${confirmedTotals.discount.toFixed(2).replace('.', ',')}\n` : ''}
+*Total: R$ ${confirmedTotals.total.toFixed(2).replace('.', ',')}* ${deliveryMethod === 'DELIVERY' ? '(+ frete)' : ''}
 
 *Pagamento:* ${formData.paymentMethod}
 ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
@@ -328,10 +340,10 @@ ${formData.observations ? `\n*Obs:* ${formData.observations}` : ''}
         const whatsappMetadata = {
           transaction_id: result.orderId,
           currency: 'BRL',
-          value: orderData.total,
-          content_ids: items.map(i => i.id),
-          contents: orderItems,
-          num_items: items.reduce((count, item) => count + item.quantity, 0),
+          value: confirmedTotals.total,
+          content_ids: confirmedItems.map(i => i.id),
+          contents: confirmedOrderItems,
+          num_items: confirmedItems.reduce((count, item) => count + item.quantity, 0),
         };
         fetch('/api/events', {
           method: 'POST',

@@ -1,8 +1,8 @@
 import { Product } from '@/lib/db';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Leaf } from 'lucide-react';
 import ProductBadges from './ProductBadges';
+import SafeImage from './SafeImage';
 
 export default function ProductItem({ product }: { product: Product }) {
     return (
@@ -22,7 +22,7 @@ export default function ProductItem({ product }: { product: Product }) {
                 </div>
                 <div className="w-28 h-24 flex-shrink-0 rounded-md overflow-hidden bg-emerald-50 relative">
                     {product.imageUrl ? (
-                        <Image
+                        <SafeImage
                           src={product.imageUrl}
                           alt={product.name}
                           fill

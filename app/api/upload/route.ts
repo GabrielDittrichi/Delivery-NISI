@@ -2,7 +2,17 @@ import { NextResponse } from 'next/server';
 import { r2, R2_BUCKET_NAME, R2_PUBLIC_URL } from '@/lib/r2';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'];
+const MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+};
+
+const ALLOWED_TYPES = Object.keys(MIME_EXTENSIONS);
 const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function POST(request: Request) {
@@ -32,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const fileExtension = file.name.split('.').pop();
+    const fileExtension = MIME_EXTENSIONS[file.type];
     const fileName = `${crypto.randomUUID()}.${fileExtension}`;
 
     await r2.send(

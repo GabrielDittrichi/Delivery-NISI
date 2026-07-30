@@ -149,6 +149,71 @@ export async function createOrder(orderData: CreateOrderInput) {
   }
 
   try {
+    const productIds = [...new Set(parsed.items.map((item) => item.id))];
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+      include: { addons: true, flavors: true },
+    });
+    const productById = new Map(products.map((product) => [product.id, product]));
+
+    const orderItems = parsed.items.map((item) => {
+      const product = productById.get(item.id);
+      if (!product) throw new Error('INVALID_PRODUCT');
+
+      if (product.flavors.length > 0 && item.selectedFlavor) {
+        const flavorExists = product.flavors.some((flavor) => flavor.id === item.selectedFlavor);
+        if (!flavorExists) throw new Error('INVALID_FLAVOR');
+      }
+
+      const selectedAddonIds = [...new Set(item.selectedAddons ?? [])];
+      if (!product.allowMultipleAddons && selectedAddonIds.length > 1) {
+        throw new Error('TOO_MANY_ADDONS');
+      }
+
+      const selectedAddons = selectedAddonIds.map((addonId) => {
+        const addon = product.addons.find((candidate) => candidate.id === addonId);
+        if (!addon) throw new Error('INVALID_ADDON');
+        return addon;
+      });
+
+      const addonsTotal = selectedAddons.reduce((total, addon) => total + addon.price, 0);
+      const unitWithAddons = product.price + addonsTotal;
+      const lineTotal = unitWithAddons * item.quantity;
+
+      return {
+        product,
+        quantity: item.quantity,
+        unitWithAddons,
+        lineTotal,
+        selectedFlavor: item.selectedFlavor || null,
+        selectedFlavorName: item.selectedFlavor
+          ? product.flavors.find((flavor) => flavor.id === item.selectedFlavor)?.name || null
+          : null,
+        selectedAddonIds,
+        selectedAddons,
+      };
+    });
+
+    const subtotal = orderItems.reduce((total, item) => total + item.lineTotal, 0);
+    const couponCode = parsed.couponCode?.trim().toUpperCase();
+    let discount = 0;
+    let validCouponCode: string | undefined;
+
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
+      const isExpired = coupon?.expiresAt ? coupon.expiresAt < new Date() : false;
+      const isUsageExceeded = coupon?.usageLimit ? coupon.usedCount >= coupon.usageLimit : false;
+
+      if (coupon && coupon.isActive && !isExpired && !isUsageExceeded && subtotal >= coupon.minOrder) {
+        discount = coupon.type === 'PERCENTAGE' ? (subtotal * coupon.value) / 100 : coupon.value;
+        discount = Math.min(discount, subtotal);
+        validCouponCode = coupon.code;
+      }
+    }
+
+    const deliveryFee = parsed.deliveryMethod === 'DELIVERY' ? 0 : 0;
+    const total = Math.max(0, subtotal + deliveryFee - discount);
+
     const order = await prisma.order.create({
       data: {
         customerName: parsed.name,
@@ -163,31 +228,20 @@ export async function createOrder(orderData: CreateOrderInput) {
         paymentMethod: parsed.paymentMethod,
         deliveryMethod: parsed.deliveryMethod || 'DELIVERY',
         observations: parsed.observations,
-        subtotal: parsed.subtotal,
-        deliveryFee: parsed.deliveryFee,
-        discount: parsed.discount,
-        total: parsed.total,
+        subtotal,
+        deliveryFee,
+        discount,
+        total,
         items: {
-          create: parsed.items.map((item) => {
-            const selectedAddonIds = item.selectedAddons ?? [];
-            const addonsTotal = selectedAddonIds.reduce((acc, addonId) => {
-              const addon = item.addons?.find((a) => a.id === addonId);
-              return acc + (addon?.price ?? 0);
-            }, 0);
-
-            const unitWithAddons = item.price + addonsTotal;
-            const lineTotal = unitWithAddons * item.quantity;
-
-            return {
-              productId: item.id,
-              productName: item.name,
-              quantity: item.quantity,
-              price: unitWithAddons, // unit snapshot including addons
-              total: lineTotal,
-              selectedFlavor: item.selectedFlavor || null,
-              selectedAddons: selectedAddonIds.length > 0 ? JSON.stringify(selectedAddonIds) : null,
-            };
-          }),
+          create: orderItems.map((item) => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: item.unitWithAddons,
+            total: item.lineTotal,
+            selectedFlavor: item.selectedFlavor,
+            selectedAddons: item.selectedAddonIds.length > 0 ? JSON.stringify(item.selectedAddonIds) : null,
+          })),
         },
       },
     });
@@ -197,32 +251,45 @@ export async function createOrder(orderData: CreateOrderInput) {
       total: order.total,
       deliveryMethod: order.deliveryMethod,
       payment_method: order.paymentMethod,
-      coupon: parsed.couponCode,
-      items: parsed.items.length,
-      content_ids: parsed.items.map(i => i.id),
+      coupon: validCouponCode,
+      items: orderItems.length,
+      content_ids: orderItems.map((item) => item.product.id),
       content_type: 'product',
       currency: 'BRL',
       value: order.total,
-      num_items: parsed.items.reduce((count, item) => count + item.quantity, 0),
-      contents: parsed.items.map((item) => {
-        const selectedAddonIds = item.selectedAddons ?? [];
-        const addonsTotal = selectedAddonIds.reduce((acc, addonId) => {
-          const addon = item.addons?.find((a) => a.id === addonId);
-          return acc + (addon?.price ?? 0);
-        }, 0);
-        return { id: item.id, quantity: item.quantity, item_price: item.price + addonsTotal };
-      }),
+      num_items: orderItems.reduce((count, item) => count + item.quantity, 0),
+      contents: orderItems.map((item) => ({
+        id: item.product.id,
+        quantity: item.quantity,
+        item_price: item.unitWithAddons,
+      })),
     }, orderData.eventId, orderData.metaUserData);
-    if (parsed.couponCode) {
+    if (validCouponCode) {
       await prisma.coupon.update({
-        where: { code: parsed.couponCode },
+        where: { code: validCouponCode },
         data: { usedCount: { increment: 1 } },
       }).catch((e) => console.error('Failed to increment coupon usage:', e));
     }
-    return { success: true, orderId: order.id };
+    return {
+      success: true,
+      orderId: order.id,
+      totals: { subtotal, deliveryFee, discount, total },
+      items: orderItems.map((item) => ({
+        id: item.product.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.unitWithAddons,
+        total: item.lineTotal,
+        selectedFlavor: item.selectedFlavor,
+        selectedFlavorName: item.selectedFlavorName,
+        selectedAddons: item.selectedAddonIds,
+        addonNames: item.selectedAddons.map((addon) => addon.name),
+      })),
+      couponCode: validCouponCode,
+    };
   } catch (error) {
     console.error('Failed to create order:', error);
-    return { success: false, error };
+    return { success: false, error: 'ORDER_CREATE_FAILED' };
   }
 }
 

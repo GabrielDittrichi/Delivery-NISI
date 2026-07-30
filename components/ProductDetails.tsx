@@ -20,8 +20,8 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { trackProductView } from '@/lib/analytics';
 import { trackPixelAndCapi } from '@/lib/track-unified';
-import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
+import SafeImage from './SafeImage';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -142,7 +142,7 @@ export default function ProductDetails({
                   />
                 ) : (
                   <button type="button" onClick={() => setIsImageOpen(true)} className="group relative block h-full w-full">
-                    <Image
+                    <SafeImage
                       src={selectedMedia.url}
                       alt={product.name}
                       fill
@@ -188,7 +188,7 @@ export default function ProductDetails({
                         </span>
                       </>
                     ) : (
-                      <Image src={item.url} alt={item.label} fill sizes="96px" className="object-cover" />
+                      <SafeImage src={item.url} alt={item.label} fill sizes="96px" className="object-cover" fallbackIconSize={20} />
                     )}
                   </button>
                 ))}
@@ -402,7 +402,7 @@ export default function ProductDetails({
                   <Link key={item.id} href={`/product/${item.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:bg-emerald-50">
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-emerald-50">
                       {item.imageUrl ? (
-                        <Image src={item.imageUrl} alt={item.name} fill sizes="56px" className="object-cover" />
+                        <SafeImage src={item.imageUrl} alt={item.name} fill sizes="56px" className="object-cover" fallbackIconSize={20} />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-emerald-700">
                           <Leaf size={20} />
@@ -450,7 +450,7 @@ export default function ProductDetails({
             <X size={30} />
           </button>
           <div className="relative h-[88vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
-            <Image src={selectedMedia.url} alt={product.name} fill sizes="100vw" className="object-contain" />
+            <SafeImage src={selectedMedia.url} alt={product.name} fill sizes="100vw" className="object-contain" fallbackIconSize={54} />
           </div>
         </div>
       )}

@@ -7,13 +7,10 @@ config();
 const prisma = new PrismaClient();
 
 async function main() {
-  // Use DATABASE_DIRECT_URL when available (bypass PgBouncer for DDL statements)
-  const databaseUrl = process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL;
-  if (!databaseUrl) {
+  if (!process.env.DATABASE_URL) {
     console.log('DATABASE_URL not set. Skipping database schema guard.');
     return;
   }
-  process.env.DATABASE_URL = databaseUrl;
 
   const statements = [
     'ALTER TABLE "Restaurant" ADD COLUMN IF NOT EXISTS "whatsapp" TEXT',

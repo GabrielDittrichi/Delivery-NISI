@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { deleteMemoryCoupon, updateMemoryCoupon } from '@/lib/coupons';
+import { updateCouponSchema } from '@/lib/validations';
+import { isJsonTooLarge } from '@/lib/rate-limit';
 
 export async function DELETE(
   request: Request,
@@ -34,17 +36,27 @@ export async function PATCH(
   ) {
     try {
       const { id } = await params;
+      if (isJsonTooLarge(request, 4 * 1024)) {
+        return NextResponse.json({ message: 'Payload muito grande' }, { status: 413 });
+      }
+
       const body = await request.json();
-      const { isActive, expiresAt, usageLimit, minOrder, type, value } = body;
+      const parsed = updateCouponSchema.safeParse({ ...body, id });
+
+      if (!parsed.success) {
+        return NextResponse.json({ message: 'Dados inválidos' }, { status: 400 });
+      }
+
+      const { isActive, expiresAt, usageLimit, minOrder, type, value } = parsed.data;
 
       if (!process.env.DATABASE_URL) {
         const coupon = updateMemoryCoupon(id, {
           ...(typeof isActive === 'boolean' ? { isActive } : {}),
           ...(type ? { type } : {}),
-          ...(value !== undefined ? { value: Number(value) } : {}),
+          ...(value !== undefined ? { value } : {}),
           ...(expiresAt !== undefined ? { expiresAt: expiresAt || null } : {}),
-          ...(usageLimit !== undefined ? { usageLimit: usageLimit ? Number(usageLimit) : null } : {}),
-          ...(minOrder !== undefined ? { minOrder: Number(minOrder || 0) } : {}),
+          ...(usageLimit !== undefined ? { usageLimit: usageLimit || null } : {}),
+          ...(minOrder !== undefined ? { minOrder: minOrder || 0 } : {}),
         });
         return coupon
           ? NextResponse.json(coupon)
@@ -56,10 +68,10 @@ export async function PATCH(
         data: {
           ...(typeof isActive === 'boolean' ? { isActive } : {}),
           ...(type ? { type } : {}),
-          ...(value !== undefined ? { value: Number(value) } : {}),
+          ...(value !== undefined ? { value } : {}),
           ...(expiresAt !== undefined ? { expiresAt: expiresAt ? new Date(expiresAt) : null } : {}),
-          ...(usageLimit !== undefined ? { usageLimit: usageLimit ? Number(usageLimit) : null } : {}),
-          ...(minOrder !== undefined ? { minOrder: Number(minOrder || 0) } : {}),
+          ...(usageLimit !== undefined ? { usageLimit: usageLimit || null } : {}),
+          ...(minOrder !== undefined ? { minOrder: minOrder || 0 } : {}),
         },
       });
   

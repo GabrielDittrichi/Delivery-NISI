@@ -5,12 +5,14 @@ import { getData, Category, Product, Restaurant } from './db';
 import { slugify } from './slugify';
 import { addProductSchema, updateProductSchema, addCategorySchema, updateRestaurantSchema } from './validations';
 import { revalidatePath } from 'next/cache';
+import { requireAdminAuth } from './admin-auth';
 
 export async function getStoreData() {
   return await getData();
 }
 
 export async function updateRestaurant(restaurantData: Restaurant) {
+  await requireAdminAuth();
   const parsed = updateRestaurantSchema.parse(restaurantData);
   const existingRestaurant = await prisma.restaurant.findFirst();
 
@@ -58,6 +60,7 @@ export async function updateRestaurant(restaurantData: Restaurant) {
 }
 
 export async function addCategory(name: string) {
+  await requireAdminAuth();
   const { name: validatedName } = addCategorySchema.parse({ name });
   const lastCategory = await prisma.category.findFirst({
     orderBy: { order: 'desc' }
@@ -75,6 +78,7 @@ export async function addCategory(name: string) {
 }
 
 export async function moveCategory(id: string, direction: 'up' | 'down') {
+  await requireAdminAuth();
   const category = await prisma.category.findUnique({ where: { id } });
   if (!category) return;
 
@@ -106,7 +110,8 @@ export async function moveCategory(id: string, direction: 'up' | 'down') {
 }
 
 export async function updateCategory(category: Category) {
-await prisma.category.update({
+  await requireAdminAuth();
+  await prisma.category.update({
     where: { id: category.id },
     data: {
       name: category.name,
@@ -311,6 +316,7 @@ export async function getCustomers() {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
+  await requireAdminAuth();
   await prisma.order.update({
     where: { id: orderId },
     data: { status }
@@ -318,6 +324,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
   revalidatePath('/admin');
 }
 export async function deleteCategory(id: string) {
+  await requireAdminAuth();
   try {
     await prisma.$transaction([
       prisma.product.deleteMany({
@@ -336,6 +343,7 @@ export async function deleteCategory(id: string) {
 }
 
 export async function addProduct(product: Omit<Product, 'id' | 'slug' | 'flavors' | 'addons'> & { flavors?: string[], addons?: { name: string, price: number }[] }) {
+  await requireAdminAuth();
   const parsed = addProductSchema.parse(product);
   await prisma.product.create({
     data: {
@@ -374,6 +382,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'slug' | 'flavors
 }
 
 export async function updateProduct(product: Omit<Product, 'slug' | 'flavors' | 'addons'> & { flavors?: string[], addons?: { name: string, price: number }[] }) {
+  await requireAdminAuth();
   const parsed = updateProductSchema.parse(product);
   await prisma.flavor.deleteMany({
     where: { productId: parsed.id }
@@ -420,6 +429,7 @@ export async function updateProduct(product: Omit<Product, 'slug' | 'flavors' | 
 }
 
 export async function deleteProduct(id: string) {
+  await requireAdminAuth();
   await prisma.product.delete({
     where: { id },
   });
@@ -429,6 +439,7 @@ export async function deleteProduct(id: string) {
 }
 
 export async function duplicateProduct(id: string) {
+  await requireAdminAuth();
   const original = await prisma.product.findUnique({
     where: { id },
     include: { flavors: true, addons: true },

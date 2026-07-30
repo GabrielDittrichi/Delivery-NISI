@@ -5,7 +5,7 @@ import { X, Minus, Plus, Trash2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import SafeImage from './SafeImage';
 
 export default function CartSidebar({ minOrder = 0 }: { minOrder?: number }) {
   const { 
@@ -67,7 +67,7 @@ export default function CartSidebar({ minOrder = 0 }: { minOrder?: number }) {
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {items.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                    <p>Seu pedido ainda esta vazio.</p>
+                    <p>Seu pedido ainda está vazio.</p>
                     <button 
                       onClick={() => setIsCartOpen(false)}
                       className="mt-4 font-medium hover:underline"
@@ -81,7 +81,7 @@ export default function CartSidebar({ minOrder = 0 }: { minOrder?: number }) {
                     <div key={`${item.id}-${item.selectedFlavor || ''}-${(item.selectedAddons || []).sort().join(',')}`} className="flex gap-4 py-4 border-b last:border-0">
                        {item.imageUrl && (
                          <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                           <Image
+                           <SafeImage
                              src={item.imageUrl}
                              alt={item.name}
                              width={80}

@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findMemoryCoupon } from '@/lib/coupons';
+import { isJsonTooLarge, isRateLimited } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    if (isJsonTooLarge(request, 2 * 1024)) {
+      return NextResponse.json({ message: 'Payload muito grande' }, { status: 413 });
+    }
+    if (isRateLimited(request, 'coupon-validate', 30, 60_000)) {
+      return NextResponse.json({ message: 'Muitas tentativas. Tente novamente em instantes.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const { code, total = 0 } = body;
 
-    if (!code) {
+    if (typeof code !== 'string' || !/^[a-zA-Z0-9_-]{2,40}$/.test(code.trim())) {
       return NextResponse.json(
-        { message: 'Código do cupom é obrigatório' },
+        { message: 'Código do cupom inválido' },
         { status: 400 }
       );
     }
