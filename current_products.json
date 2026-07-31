@@ -2,73 +2,73 @@
   {
     "id": "fibra-prebiotica",
     "slug": "fibra-prebiotica",
-    "imageUrl": "/products/bebida-funcional.webp",
+    "imageUrl": "/products/fibras.webp",
     "videoUrl": null
   },
   {
     "id": "shot-matinal",
     "slug": "shot-matinal",
-    "imageUrl": "/products/bebida-funcional.webp",
+    "imageUrl": "/products/shot-matinal.webp",
     "videoUrl": null
   },
   {
     "id": "energy",
     "slug": "energy",
-    "imageUrl": "/products/bebida-funcional.webp",
+    "imageUrl": "/products/bebidas-funcionais-energy.webp",
     "videoUrl": null
   },
   {
     "id": "acelera",
     "slug": "acelera",
-    "imageUrl": "/products/bebida-funcional.webp",
+    "imageUrl": "/products/bebidas-funcionais-acelera.webp",
     "videoUrl": null
   },
   {
     "id": "pudim",
     "slug": "pudim",
-    "imageUrl": "/products/sobremesa.webp",
+    "imageUrl": "/products/pudim-proteico.webp",
     "videoUrl": null
   },
   {
     "id": "shake-garrafa",
     "slug": "shake-de-garrafa",
-    "imageUrl": "/products/shake.webp",
+    "imageUrl": "/products/shake-na-garrafa.webp",
     "videoUrl": null
   },
   {
     "id": "bolo-pote",
     "slug": "bolo-de-pote",
-    "imageUrl": "/products/sobremesa.webp",
+    "imageUrl": "/products/bolo-de-pote-proteico.webp",
     "videoUrl": null
   },
   {
     "id": "sanduiche-atum",
     "slug": "sanduiche-de-atum",
-    "imageUrl": "/products/salgado.webp",
+    "imageUrl": "/products/sanduiche-de-atum.webp",
     "videoUrl": null
   },
   {
     "id": "nutrisoup",
     "slug": "nutrisoup",
-    "imageUrl": "/products/salgado.webp",
+    "imageUrl": "/products/nutrisoup.webp",
     "videoUrl": null
   },
   {
     "id": "shake-proteico",
     "slug": "shake-proteico",
-    "imageUrl": "/products/shake.webp",
+    "imageUrl": "/products/shake-proteico.webp",
     "videoUrl": null
   },
   {
     "id": "torta-frango",
     "slug": "torta-de-frango",
-    "imageUrl": "/products/salgado.webp",
+    "imageUrl": "/products/torta-de-frango.webp",
     "videoUrl": null
   },
   {
     "id": "empada",
     "slug": "empada",
-    "imageUrl": "/products/empada.webp",
+    "imageUrl": "/products/empada-pequena.webp",
     "videoUrl": null
   },
   {
@@ -80,13 +80,13 @@
   {
     "id": "pao-de-queijo",
     "slug": "pao-de-queijo",
-    "imageUrl": "/products/salgado.webp",
+    "imageUrl": "/products/pao-de-queijo.webp",
     "videoUrl": null
   },
   {
     "id": "sanduiche-frango",
     "slug": "sanduiche-de-frango",
-    "imageUrl": "/products/salgado.webp",
+    "imageUrl": "/products/sanduiche-natural.webp",
     "videoUrl": null
   }
 ]
